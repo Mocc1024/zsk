@@ -4,6 +4,7 @@ declare (strict_types = 1);
 namespace app\model;
 
 use app\service\Context;
+use think\facade\Request;
 use think\Model;
 
 /**
@@ -27,7 +28,7 @@ class OperationLog extends Model
                 'module'      => $module,
                 'action'      => $action,
                 'description' => mb_substr($description, 0, 250),
-                'ip'          => request()->ip(),
+                'ip'          => Request::ip(),
                 'create_time' => date('Y-m-d H:i:s'),
             ]);
         } catch (\Throwable $e) {

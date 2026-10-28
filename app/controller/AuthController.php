@@ -35,7 +35,7 @@ class AuthController extends BaseController
             return $this->fail('账号已被禁用，请联系超级管理员', 1002);
         }
 
-        $admin->last_login_ip   = request()->ip();
+        $admin->last_login_ip   = $this->request->ip();
         $admin->last_login_time = date('Y-m-d H:i:s');
         $admin->save();
 
