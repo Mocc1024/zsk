@@ -1,0 +1,152 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+  background: #f5f7fa;
+}
+
+/* 登录页 */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1d3b8f 0%, #2f54eb 45%, #5b8ff9 100%);
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18);
+  padding: 40px 36px 28px;
+  background: #fff;
+}
+
+.login-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2d3d;
+  margin-bottom: 6px;
+}
+
+.login-subtitle {
+  color: #8c8c8c;
+  margin-bottom: 28px;
+  font-size: 13px;
+}
+
+.login-tip {
+  margin-top: 18px;
+  padding: 10px 14px;
+  background: #f0f5ff;
+  border-radius: 8px;
+  color: #5570c6;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+/* 布局：外层锁定视口高度，左侧固定，仅右侧内容区滚动 */
+.app-layout {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-sider {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-sider .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 菜单项超出屏幕时，侧边栏内部自己滚动，不影响右侧 */
+.app-sider .ant-menu {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.app-main {
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-logo {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.app-header {
+  background: #fff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  z-index: 9;
+  flex: none;
+  height: 56px;
+  line-height: 56px;
+}
+
+.app-content {
+  flex: 1;
+  min-height: 0;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.page-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.stat-card {
+  border-radius: 10px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.2s;
+}
+
+.stat-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1f2d3d;
+  line-height: 1.2;
+}
+
+.stat-title {
+  color: #8c8c8c;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.stat-desc {
+  color: #bfbfbf;
+  font-size: 12px;
+  margin-top: 6px;
+}

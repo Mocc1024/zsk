@@ -1,0 +1,4 @@
+# ThinkPHP 8 伪静态规则（Nginx）
+# 该文件会被小皮面板的站点配置 include 到 location / 中
+# 作用：当请求的文件/目录不存在时，转发到 ThinkPHP 入口 index.php
+try_files $uri $uri/ /index.php?s=$uri&$args;
