@@ -46,9 +46,25 @@ export const adminApi = {
   permissions: (id) => request.get(`/admin/${id}/permissions`),
 };
 
-/** 权限 */
-export const permissionApi = {
-  tree: () => request.get('/permission/tree'),
+/** 权限菜单 */
+export const ruleApi = {
+  tree: (params) => request.get('/permission/tree', { params }),
+  create: (data) => request.post('/permission', data),
+  update: (id, data) => request.put(`/permission/${id}`, data),
+  remove: (id) => request.delete(`/permission/${id}`),
+  setStatus: (id, status) => request.put(`/permission/${id}/status`, { status }),
+};
+
+/** 用户组（角色） */
+export const groupApi = {
+  list: (params) => request.get('/group', { params }),
+  options: () => request.get('/group/options'),
+  create: (data) => request.post('/group', data),
+  update: (id, data) => request.put(`/group/${id}`, data),
+  remove: (id) => request.delete(`/group/${id}`),
+  setStatus: (id, status) => request.put(`/group/${id}/status`, { status }),
+  rules: (id) => request.get(`/group/${id}/rules`),
+  authorize: (id, rules) => request.put(`/group/${id}/rules`, { rules }),
 };
 
 /** 操作日志 */

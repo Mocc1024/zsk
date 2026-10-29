@@ -9,11 +9,12 @@ export function AuthProvider({ children }) {
     return cached ? JSON.parse(cached) : null;
   });
   const [permissions, setPermissions] = useState([]);
+  const [menus, setMenus] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const token = localStorage.getItem('zsk_token');
 
-  const setSession = useCallback((nextToken, nextAdmin, nextPermissions) => {
+  const setSession = useCallback((nextToken, nextAdmin, nextPermissions, nextMenus) => {
     if (nextToken) {
       localStorage.setItem('zsk_token', nextToken);
     }
@@ -25,21 +26,31 @@ export function AuthProvider({ children }) {
       localStorage.setItem('zsk_permissions', JSON.stringify(nextPermissions));
       setPermissions(nextPermissions);
     }
+    if (Array.isArray(nextMenus)) {
+      localStorage.setItem('zsk_menus', JSON.stringify(nextMenus));
+      setMenus(nextMenus);
+    }
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('zsk_token');
     localStorage.removeItem('zsk_admin');
     localStorage.removeItem('zsk_permissions');
+    localStorage.removeItem('zsk_menus');
     setAdmin(null);
     setPermissions([]);
+    setMenus([]);
   }, []);
 
-  // 刷新后先从本地恢复权限，避免菜单闪烁
+  // 刷新后先从本地恢复权限与菜单，避免菜单闪烁
   useEffect(() => {
     const cached = localStorage.getItem('zsk_permissions');
     if (cached) {
       setPermissions(JSON.parse(cached));
+    }
+    const cachedMenus = localStorage.getItem('zsk_menus');
+    if (cachedMenus) {
+      setMenus(JSON.parse(cachedMenus));
     }
   }, []);
 
@@ -49,9 +60,6 @@ export function AuthProvider({ children }) {
     if (!token || fetchedRef.current) {
       return;
     }
-    if (admin && permissions.length > 0) {
-      return;
-    }
     fetchedRef.current = true;
     setLoading(true);
     authApi
@@ -59,12 +67,14 @@ export function AuthProvider({ children }) {
       .then((res) => {
         localStorage.setItem('zsk_admin', JSON.stringify(res.data.admin));
         localStorage.setItem('zsk_permissions', JSON.stringify(res.data.permissions || []));
+        localStorage.setItem('zsk_menus', JSON.stringify(res.data.menus || []));
         setAdmin(res.data.admin);
         setPermissions(res.data.permissions || []);
+        setMenus(res.data.menus || []);
       })
       .catch(() => logout())
       .finally(() => setLoading(false));
-  }, [token, admin, permissions, logout]);
+  }, [token, admin, permissions, menus, logout]);
 
   /**
    * 是否拥有某权限
@@ -81,12 +91,14 @@ export function AuthProvider({ children }) {
       token,
       loading,
       permissions,
-      isSuper: admin?.role === 'admin',
+      menus,
+      // 超级管理员的 permissions 为 ['*']，由用户组的 rules='*' 决定
+      isSuper: permissions.includes('*'),
       hasPermission,
       setSession,
       logout,
     }),
-    [admin, token, loading, permissions, hasPermission, setSession, logout]
+    [admin, token, loading, permissions, menus, hasPermission, setSession, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

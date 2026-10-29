@@ -4,6 +4,7 @@ import { Alert, Button, Form, Input, Typography, message } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { authApi } from '../api';
 import { useAuth } from '../store/AuthContext';
+import bgImage from '../assets/login-bg.jpg';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await authApi.login(values);
-      setSession(res.data.token, res.data.admin, res.data.permissions || []);
+      setSession(res.data.token, res.data.admin, res.data.permissions || [], res.data.menus || []);
       message.success(`欢迎回来，${res.data.admin.nickname || res.data.admin.username}`);
       navigate('/dashboard', { replace: true });
     } catch (e) {
@@ -25,7 +26,7 @@ export default function Login() {
   };
 
   return (
-    <div className="login-page">
+    <div className="login-page" style={{ backgroundImage: `url(${bgImage})` }}>
       <div className="login-card">
         <Typography.Title level={3} className="login-title">
           ZSK 内容管理后台

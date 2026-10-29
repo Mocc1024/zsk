@@ -27,7 +27,8 @@ class AuthController extends BaseController
             return $this->fail('请输入账号和密码');
         }
 
-        $admin = Admin::where('username', $username)->find();
+        // 已删除的账号不允许登录
+        $admin = Admin::where('username', $username)->whereNull('delete_time')->find();
         if (!$admin || !password_verify($password, $admin->getAttr('password'))) {
             return $this->fail('账号或密码错误', 1001, null, 200);
         }
@@ -46,16 +47,19 @@ class AuthController extends BaseController
         $token = Jwt::encode([
             'id'       => $admin->getAttr('id'),
             'username' => $admin->getAttr('username'),
-            'role'     => $admin->getAttr('role'),
         ], $ttl);
+
+        $profile = $admin->toArray();
 
         return $this->success([
             'token'       => $token,
             'tokenType'   => 'Bearer',
             'expiresIn'   => $ttl,
-            'admin'       => $admin->toArray(),
+            'admin'       => $profile,
             // 超级管理员返回 ['*']，其余返回已分配的权限 key
-            'permissions' => Permission::responseFor($admin->toArray()),
+            'permissions' => Permission::responseFor($profile),
+            // 按权限过滤后的菜单树（前端侧边栏据此渲染）
+            'menus'       => Permission::menusFor($profile),
         ], '登录成功');
     }
 
@@ -73,6 +77,7 @@ class AuthController extends BaseController
             'admin'       => $admin,
             // 超级管理员返回 ['*']，普通管理员返回其被分配的权限 key 列表
             'permissions' => Permission::responseFor($admin),
+            'menus'       => Permission::menusFor($admin),
         ]);
     }
 

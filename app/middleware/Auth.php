@@ -6,6 +6,7 @@ namespace app\middleware;
 use app\model\Admin;
 use app\service\Context;
 use app\service\Jwt;
+use app\service\Permission;
 use Closure;
 use think\Request;
 
@@ -44,6 +45,12 @@ class Auth
         }
 
         Context::setAdmin($admin->toArray());
+
+        // 接口级鉴权：按「请求方法 + 路径」匹配所需权限点，未匹配到的接口默认放行
+        $required = Permission::matchRoute($request->method(), (string) $request->pathinfo());
+        if ($required !== null && !Permission::can($required)) {
+            return json(['code' => 403, 'msg' => '无权限执行该操作：' . $required, 'data' => null], 403);
+        }
 
         return $next($request);
     }

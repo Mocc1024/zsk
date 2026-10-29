@@ -10,16 +10,16 @@ import {
   Space,
   Switch,
   Table,
-  Tabs,
   Tag,
   Typography,
   message,
 } from 'antd';
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { adminApi, permissionApi } from '../api';
-import PermissionTree from '../components/PermissionTree';
+import { adminApi, groupApi } from '../api';
 import { useAuth } from '../store/AuthContext';
-import { ROLE_OPTIONS, roleLabel } from '../utils/constants';
+
+/** 系统内置的初始超级管理员：不可禁用 / 删除 / 变更所属用户组 */
+const BUILTIN_SUPER_ADMIN_ID = 1;
 
 export default function AdminList() {
   const { hasPermission } = useAuth();
@@ -32,15 +32,8 @@ export default function AdminList() {
   const [editing, setEditing] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // 权限树数据
-  const [permTree, setPermTree] = useState([]);
-  const [permKeys, setPermKeys] = useState([]);
-  const [checkedKeys, setCheckedKeys] = useState([]);
-
-  // 当前编辑对象的角色：超管默认拥有全部权限，勾选框置灰
-  const watchedRole = Form.useWatch('role', form);
-  const currentRole = editing ? editing.role : watchedRole;
-  const isSuperTarget = currentRole === 'admin';
+  // 用户组选项
+  const [groups, setGroups] = useState([]);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -57,23 +50,15 @@ export default function AdminList() {
     fetchList();
   }, [fetchList]);
 
-  // 权限树只在第一次打开弹窗时请求一次
-  const loadPermTree = useCallback(async () => {
-    if (permTree.length > 0) {
-      return;
-    }
-    const res = await permissionApi.tree();
-    setPermTree(res.data.tree || []);
-    setPermKeys(res.data.allKeys || []);
-  }, [permTree]);
+  useEffect(() => {
+    groupApi.options().then((res) => setGroups(res.data || []));
+  }, []);
 
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
-    form.setFieldsValue({ role: 'editor', status: 1 });
-    setCheckedKeys([]);
+    form.setFieldsValue({ status: 1 });
     setModalOpen(true);
-    loadPermTree();
   };
 
   const openEdit = (record) => {
@@ -82,25 +67,19 @@ export default function AdminList() {
       username: record.username,
       nickname: record.nickname,
       email: record.email,
-      role: record.role,
+      group_id: record.group_id || undefined,
       status: Number(record.status) === 1,
       password: '',
     });
-    // 后端已按角色算好：超管返回全部 key，其余返回已分配的
-    setCheckedKeys(record.permissions || []);
     setModalOpen(true);
-    loadPermTree();
   };
 
   const handleSubmit = async () => {
     const values = await form.validateFields();
     setSubmitting(true);
     try {
-      const payload = {
-        ...values,
-        // 超级管理员的权限由后端直接置 NULL，这里传空数组即可
-        permissions: isSuperTarget ? [] : checkedKeys,
-      };
+      // 权限由所属用户组决定，这里只提交基本信息
+      const payload = { ...values };
       if (editing) {
         await adminApi.update(editing.id, payload);
         message.success('保存成功');
@@ -127,6 +106,9 @@ export default function AdminList() {
     fetchList();
   };
 
+  // 内置初始超级管理员：不可禁用、不可删除、不可变更所属用户组
+  const isBuiltinAdmin = editing?.id === BUILTIN_SUPER_ADMIN_ID;
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -145,6 +127,7 @@ export default function AdminList() {
           rowKey="id"
           loading={loading}
           dataSource={list}
+          scroll={{ x: 1130 }}
           pagination={{
             current: query.page,
             pageSize: query.limit,
@@ -156,22 +139,22 @@ export default function AdminList() {
             { title: 'ID', dataIndex: 'id', width: 70 },
             { title: '登录账号', dataIndex: 'username', width: 140 },
             { title: '昵称', dataIndex: 'nickname', width: 140 },
-            {
-              title: '角色',
-              dataIndex: 'role',
-              width: 120,
-              render: (v) => <Tag color={v === 'admin' ? 'blue' : 'green'}>{roleLabel(v)}</Tag>,
-            },
             { title: '邮箱', dataIndex: 'email', ellipsis: true },
             {
-              title: '权限',
-              dataIndex: 'permissions',
-              width: 110,
-              render: (v, record) =>
-                record.role === 'admin' ? (
-                  <Tag color="blue">全部权限</Tag>
+              title: '所属用户组',
+              dataIndex: 'group_names',
+              width: 180,
+              render: (v) =>
+                (v || []).length ? (
+                  <Space size={4} wrap>
+                    {(v || []).map((name) => (
+                      <Tag key={name} color="blue">
+                        {name}
+                      </Tag>
+                    ))}
+                  </Space>
                 ) : (
-                  <span>{(v || []).length} 项</span>
+                  <span style={{ color: '#999' }}>未分配</span>
                 ),
             },
             {
@@ -185,7 +168,8 @@ export default function AdminList() {
             {
               title: '操作',
               key: 'action',
-              width: 180,
+              width: 200,
+              fixed: 'right',
               render: (_, record) => (
                 <Space size={4}>
                   {hasPermission('admin.update') && (
@@ -193,12 +177,13 @@ export default function AdminList() {
                       编辑
                     </Button>
                   )}
-                  {hasPermission('admin.status') && (
+                  {/* 内置初始超级管理员不可禁用、不可删除 */}
+                  {hasPermission('admin.status') && record.id !== BUILTIN_SUPER_ADMIN_ID && (
                     <Button type="link" size="small" onClick={() => handleStatus(record)}>
                       {record.status === 1 ? '禁用' : '启用'}
                     </Button>
                   )}
-                  {hasPermission('admin.delete') && (
+                  {hasPermission('admin.delete') && record.id !== BUILTIN_SUPER_ADMIN_ID && (
                     <Popconfirm title="确认删除该管理员？" onConfirm={() => handleDelete(record.id)}>
                       <Button type="link" size="small" danger>
                         删除
@@ -220,75 +205,61 @@ export default function AdminList() {
         confirmLoading={submitting}
         okText="保存"
         cancelText="取消"
-        width={720}
+        width={520}
         destroyOnClose
       >
-        <Tabs
-          items={[
-            {
-              key: 'base',
-              label: '基本信息',
-              children: (
-                <Form
-                  form={form}
-                  layout="vertical"
-                  preserve={false}
-                  initialValues={{ role: 'editor', status: 1 }}
-                >
-                  <Form.Item
-                    name="username"
-                    label="登录账号"
-                    rules={[
-                      { required: true, message: '请输入登录账号' },
-                      { min: 3, message: '账号至少 3 个字符' },
-                    ]}
-                  >
-                    <Input placeholder="字母、数字或下划线" disabled={Boolean(editing)} />
-                  </Form.Item>
-                  <Form.Item
-                    name="password"
-                    label={editing ? '重置密码（留空则不修改）' : '登录密码'}
-                    rules={
-                      editing
-                        ? []
-                        : [
-                            { required: true, message: '请输入登录密码' },
-                            { min: 6, message: '密码至少 6 位' },
-                          ]
-                    }
-                  >
-                    <Input.Password placeholder={editing ? '不修改请留空' : '至少 6 位'} />
-                  </Form.Item>
-                  <Form.Item name="nickname" label="昵称" rules={[{ required: true, message: '请输入昵称' }]}>
-                      <Input placeholder="显示名称" />
-                  </Form.Item>
-                  <Form.Item name="email" label="邮箱">
-                    <Input placeholder="可选" />
-                  </Form.Item>
-                  <Form.Item name="role" label="角色" rules={[{ required: true, message: '请选择角色' }]}>
-                    <Select options={ROLE_OPTIONS} />
-                  </Form.Item>
-                  <Form.Item name="status" label="启用状态" valuePropName="checked">
-                    <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-                  </Form.Item>
-                </Form>
-              ),
-            },
-            {
-              key: 'perm',
-              label: '权限配置',
-              children: (
-                <PermissionTree
-                  tree={permTree}
-                  allKeys={permKeys}
-                  value={isSuperTarget ? permKeys : checkedKeys}
-                  onChange={setCheckedKeys}
-                  disabled={isSuperTarget}
-                />
-              ),
-            },
-          ]}
-        />
+        <Form form={form} layout="vertical" preserve={false} initialValues={{ status: 1 }}>
+          <Form.Item
+            name="username"
+            label="登录账号"
+            rules={[
+              { required: true, message: '请输入登录账号' },
+              { min: 3, message: '账号至少 3 个字符' },
+            ]}
+          >
+            <Input placeholder="字母、数字或下划线" disabled={Boolean(editing)} />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            label={editing ? '重置密码（留空则不修改）' : '登录密码'}
+            rules={
+              editing
+                ? []
+                : [
+                    { required: true, message: '请输入登录密码' },
+                    { min: 6, message: '密码至少 6 位' },
+                  ]
+            }
+          >
+            <Input.Password placeholder={editing ? '不修改请留空' : '至少 6 位'} />
+          </Form.Item>
+          <Form.Item name="nickname" label="昵称" rules={[{ required: true, message: '请输入昵称' }]}>
+            <Input placeholder="显示名称" />
+          </Form.Item>
+          <Form.Item name="email" label="邮箱">
+            <Input placeholder="可选" />
+          </Form.Item>
+          <Form.Item
+            name="group_id"
+            label="所属用户组"
+            rules={[{ required: true, message: '请选择所属用户组' }]}
+            extra={
+              isBuiltinAdmin
+                ? '内置初始超级管理员固定归属「超级管理员」用户组'
+                : '必选，该用户的权限由其所属用户组的权限决定'
+            }
+          >
+            <Select placeholder="请选择用户组" options={groups} disabled={isBuiltinAdmin} />
+          </Form.Item>
+          <Form.Item
+            name="status"
+            label="启用状态"
+            valuePropName="checked"
+            extra={isBuiltinAdmin ? '内置初始超级管理员不可禁用' : undefined}
+          >
+            <Switch checkedChildren="启用" unCheckedChildren="禁用" disabled={isBuiltinAdmin} />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

@@ -8,6 +8,8 @@ import ContentList from './pages/ContentList';
 import ContentEdit from './pages/ContentEdit';
 import CategoryList from './pages/CategoryList';
 import AdminList from './pages/AdminList';
+import GroupList from './pages/GroupList';
+import PermissionList from './pages/PermissionList';
 import LogList from './pages/LogList';
 
 function RequireAuth({ children }) {
@@ -45,6 +47,8 @@ function AppRoutes() {
         <Route path="content/edit/:id" element={<ContentEdit />} />
         <Route path="category" element={<CategoryList />} />
         <Route path="admin" element={<AdminList />} />
+        <Route path="group" element={<GroupList />} />
+        <Route path="permission" element={<PermissionList />} />
         <Route path="log" element={<LogList />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

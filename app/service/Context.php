@@ -3,8 +3,6 @@ declare (strict_types = 1);
 
 namespace app\service;
 
-use app\model\Admin;
-
 /**
  * 请求上下文：保存当前登录管理员信息
  */
@@ -36,10 +34,10 @@ class Context
     }
 
     /**
-     * 是否超级管理员
+     * 是否超级管理员：所属任一用户组的 rules='*'
      */
     public static function isSuper(): bool
     {
-        return (self::$admin['role'] ?? '') === Admin::ROLE_ADMIN;
+        return Permission::isSuper(self::$admin);
     }
 }

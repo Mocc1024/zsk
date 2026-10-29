@@ -3,18 +3,16 @@ declare (strict_types = 1);
 
 namespace app\model;
 
-use app\service\Permission;
+use think\facade\Db;
 use think\Model;
 
 /**
  * 管理员模型
+ *
+ * 权限不再存于本表，统一由所属用户组（zsk_auth_group）决定。
  */
 class Admin extends Model
 {
-    /** 角色 */
-    public const ROLE_ADMIN  = 'admin';
-    public const ROLE_EDITOR = 'editor';
-
     /** 状态 */
     public const STATUS_ENABLE  = 1;
     public const STATUS_DISABLE = 0;
@@ -23,7 +21,7 @@ class Admin extends Model
 
     protected $hidden = ['password', 'delete_time'];
 
-    protected $append = ['role_text', 'status_text'];
+    protected $append = ['status_text', 'group_title', 'group_names'];
 
     /**
      * 密码自动加密
@@ -38,40 +36,38 @@ class Admin extends Model
         return password_hash($value, PASSWORD_BCRYPT);
     }
 
-    public function getRoleTextAttr($value, array $data): string
-    {
-        return ($data['role'] ?? '') === self::ROLE_ADMIN ? '超级管理员' : '编辑';
-    }
-
     public function getStatusTextAttr($value, array $data): string
     {
         return (int) ($data['status'] ?? 0) === self::STATUS_ENABLE ? '启用' : '禁用';
     }
 
     /**
-     * 读取权限：数据库里的 JSON 字符串自动转成数组
+     * 主用户组名称
      */
-    public function getPermissionsAttr($value): array
+    public function getGroupTitleAttr($value, array $data): string
     {
-        return Permission::decode($value);
+        $gid = (int) ($data['group_id'] ?? 0);
+        if ($gid <= 0) {
+            return '未分配';
+        }
+        return (string) (Db::name('auth_group')->where('id', $gid)->value('title') ?: '未分配');
     }
 
     /**
-     * 写入权限：数组自动转成 JSON 字符串，并过滤掉非法 key
+     * 所属的全部用户组（主组 + 附加组）
      */
-    public function setPermissionsAttr($value): string
+    public function getGroupNamesAttr($value, array $data): array
     {
-        return json_encode(Permission::normalize(is_array($value) ? $value : []), JSON_UNESCAPED_UNICODE);
-    }
+        $gid = (int) ($data['group_id'] ?? 0);
+        $ids = Db::name('auth_group_access')
+            ->where('uid', (int) ($data['id'] ?? 0))
+            ->column('group_id');
 
-    /**
-     * 角色列表
-     */
-    public static function roleOptions(): array
-    {
-        return [
-            ['label' => '超级管理员', 'value' => self::ROLE_ADMIN],
-            ['label' => '编辑', 'value' => self::ROLE_EDITOR],
-        ];
+        $ids   = array_values(array_unique(array_filter(array_merge([$gid], array_map('intval', $ids)))));
+        if (!$ids) {
+            return [];
+        }
+
+        return Db::name('auth_group')->whereIn('id', $ids)->column('title');
     }
 }

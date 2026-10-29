@@ -106,6 +106,7 @@ export default function CategoryList() {
           rowKey="id"
           loading={loading}
           dataSource={list}
+          scroll={{ x: 670 }}
           pagination={{
             current: query.page,
             pageSize: query.limit,
@@ -129,7 +130,8 @@ export default function CategoryList() {
             {
               title: '操作',
               key: 'action',
-              width: 180,
+              width: 200,
+              fixed: 'right',
               render: (_, record) => (
                 <Space size={4}>
                   {hasPermission('category.update') && (

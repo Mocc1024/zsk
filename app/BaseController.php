@@ -120,9 +120,9 @@ abstract class BaseController
      * 权限校验
      *
      * 无权限时抛 403，由 ExceptionHandle 统一输出 {"code":403,...}。
-     * 超级管理员（role=admin）跳过校验，始终通过。
+     * 超级管理员（所属用户组 rules='*'）跳过校验，始终通过。
      *
-     * @param string $key 权限点，如 content.delete，见 config/permission.php
+     * @param string $key 权限点，如 content.delete，见「系统管理 → 权限菜单」
      * @throws HttpException
      */
     protected function checkPermission(string $key): void

@@ -14,6 +14,9 @@ use think\facade\Db;
  */
 class AdminController extends BaseController
 {
+    /** 系统内置的初始超级管理员：不可禁用 / 删除 / 变更所属用户组 */
+    public const BUILTIN_SUPER_ADMIN_ID = 1;
+
     protected function initialize()
     {
         if (!Context::isSuper()) {
@@ -31,31 +34,23 @@ class AdminController extends BaseController
         [$page, $limit] = $this->pageInfo();
         $params = $this->params();
 
-        // 用模型查询，permissions 字段会自动从 JSON 转成数组
+        // 用模型查询：group_title / group_names / status_text 会自动附加
         $query = Admin::whereNull('delete_time');
 
         $keyword = trim((string) ($params['keyword'] ?? ''));
         if ($keyword !== '') {
             $query->where('username|nickname|email', 'like', '%' . $keyword . '%');
         }
-        if (($params['role'] ?? '') !== '') {
-            $query->where('role', (string) $params['role']);
+        if (($params['group_id'] ?? '') !== '' && $params['group_id'] !== null) {
+            $query->where('group_id', (int) $params['group_id']);
         }
         if (($params['status'] ?? '') !== '' && $params['status'] !== null) {
             $query->where('status', (int) $params['status']);
         }
 
         $total = (int) (clone $query)->count();
-        $list  = $query->field('id,username,nickname,avatar,role,permissions,email,status,last_login_ip,last_login_time,create_time,update_time')
+        $list  = $query->field('id,username,nickname,avatar,group_id,email,status,last_login_ip,last_login_time,create_time,update_time')
             ->order('id', 'asc')->page($page, $limit)->select()->toArray();
-
-        foreach ($list as &$item) {
-            $item['role_text']   = $item['role'] === Admin::ROLE_ADMIN ? '超级管理员' : '编辑';
-            $item['status_text'] = (int) $item['status'] === Admin::STATUS_ENABLE ? '启用' : '禁用';
-            // 超级管理员不读 permissions 字段，代码里直接赋予全部权限
-            $item['permissions'] = Permission::forAdmin($item);
-        }
-        unset($item);
 
         return $this->success([
             'list'     => $list,
@@ -77,19 +72,27 @@ class AdminController extends BaseController
             'username' => 'require|alphaDash|length:3,30',
             'password' => 'require|length:6,32',
             'nickname' => 'require|max:50',
+            'group_id' => 'require|gt:0',
         ], [
             'username.require'   => '请输入登录账号',
             'username.alphaDash' => '账号只能包含字母、数字、下划线',
             'password.require'   => '请输入登录密码',
             'password.length'    => '密码长度需在 6-32 位之间',
             'nickname.require'   => '请输入昵称',
+            'group_id.require'   => '请选择所属用户组',
+            'group_id.gt'        => '请选择所属用户组',
         ]);
 
-        if (Admin::where('username', $data['username'])->count() > 0) {
+        // 查重排除已删除账号，避免同名账号无法复用
+        if (Admin::where('username', $data['username'])->whereNull('delete_time')->count() > 0) {
             return $this->fail('该登录账号已存在');
         }
 
-        $role = ($data['role'] ?? '') === Admin::ROLE_ADMIN ? Admin::ROLE_ADMIN : Admin::ROLE_EDITOR;
+        // 所选用户组必须存在且启用，否则该账号没有任何权限、等于无法使用
+        $groupId = (int) ($data['group_id'] ?? 0);
+        if (!$this->groupExists($groupId)) {
+            return $this->fail('所选用户组不存在或已禁用');
+        }
 
         $model = new Admin();
         $model->save([
@@ -98,14 +101,14 @@ class AdminController extends BaseController
             'nickname'    => trim((string) ($data['nickname'] ?? '')),
             'email'       => trim((string) ($data['email'] ?? '')),
             'avatar'      => trim((string) ($data['avatar'] ?? '')),
-            'role'        => $role,
-            // 超级管理员该字段留空，鉴权时直接放行全部权限
-            'permissions' => Permission::toStorage(['role' => $role], $data['permissions'] ?? []),
+            'group_id'    => $groupId,
             'status'      => (int) ($data['status'] ?? 1) === 1 ? Admin::STATUS_ENABLE : Admin::STATUS_DISABLE,
             'create_time' => date('Y-m-d H:i:s'),
             'update_time' => date('Y-m-d H:i:s'),
         ]);
 
+        self::attachGroup((int) $model->getAttr('id'), $groupId);
+        Permission::flush();
         $this->log('admin', 'create', '新增管理员：' . $data['username']);
 
         return $this->success(['id' => $model->getAttr('id')], '新增成功');
@@ -127,9 +130,11 @@ class AdminController extends BaseController
         }
 
         $payload = [];
-        foreach (['nickname', 'email', 'avatar', 'role', 'status'] as $field) {
+        foreach (['nickname', 'email', 'avatar', 'group_id', 'status'] as $field) {
             if (array_key_exists($field, $data)) {
-                $payload[$field] = in_array($field, ['status'], true) ? (int) $data[$field] : trim((string) $data[$field]);
+                $payload[$field] = in_array($field, ['status', 'group_id'], true)
+                    ? (int) $data[$field]
+                    : trim((string) $data[$field]);
             }
         }
         if (!empty($data['password'])) {
@@ -139,15 +144,29 @@ class AdminController extends BaseController
             $payload['password'] = (string) $data['password'];
         }
 
-        if (array_key_exists('permissions', $data)) {
-            // 角色以本次提交的为准，未提交则用库里的角色
-            $targetRole = (string) ($data['role'] ?? $row->getAttr('role'));
-            $payload['permissions'] = Permission::toStorage(['role' => $targetRole], $data['permissions']);
+        // 内置初始超级管理员：不可禁用，且固定归属超级管理员组
+        if ($id === self::BUILTIN_SUPER_ADMIN_ID) {
+            unset($payload['status'], $payload['group_id']);
         }
 
-        // 禁止禁用/降级自己，也不允许改自己的权限（防止把自己锁死）
+        // 禁止禁用自己（防止把自己锁死）
         if ($id === Context::adminId()) {
-            unset($payload['status'], $payload['role'], $payload['permissions']);
+            unset($payload['status']);
+        }
+
+        // 变更所属组时必须指向一个有效且启用的用户组
+        if (array_key_exists('group_id', $payload) && !$this->groupExists((int) $payload['group_id'])) {
+            return $this->fail('所选用户组不存在或已禁用');
+        }
+
+        // 禁止把自己移出超级管理员组，否则会立刻失去管理后台的能力
+        if (
+            $id === Context::adminId()
+            && array_key_exists('group_id', $payload)
+            && Permission::isSuper($row->toArray())
+            && !Permission::groupsAreSuper([(int) $payload['group_id']])
+        ) {
+            return $this->fail('不能将自己移出超级管理员组，否则将无法继续管理后台');
         }
 
         if (empty($payload)) {
@@ -155,6 +174,13 @@ class AdminController extends BaseController
         }
         $payload['update_time'] = date('Y-m-d H:i:s');
         $row->save($payload);
+
+        if (isset($payload['group_id'])) {
+            // 主组变更即重置归属：先清掉旧的附加组，再加入新组
+            Db::name('auth_group_access')->where('uid', $id)->delete();
+            self::attachGroup($id, (int) $payload['group_id']);
+        }
+        Permission::flush();
 
         $this->log('admin', 'update', '编辑管理员：' . $row->getAttr('username'));
 
@@ -169,6 +195,10 @@ class AdminController extends BaseController
         $this->checkPermission('admin.delete');
 
         $id = (int) ($id ?: $this->request->param('id'));
+        if ($id === self::BUILTIN_SUPER_ADMIN_ID) {
+            return $this->fail('系统内置的初始超级管理员不可删除');
+        }
+
         if ($id === Context::adminId()) {
             return $this->fail('不能删除当前登录的账号');
         }
@@ -177,11 +207,10 @@ class AdminController extends BaseController
         if (!$row) {
             return $this->fail('管理员不存在', 404);
         }
-        if ($row->getAttr('id') === 1) {
-            return $this->fail('初始超级管理员不可删除');
-        }
 
         $row->save(['delete_time' => date('Y-m-d H:i:s')]);
+        // 同步清理用户组关联，避免软删后仍占用组成员名额
+        Db::name('auth_group_access')->where('uid', $id)->delete();
         $this->log('admin', 'delete', '删除管理员：' . $row->getAttr('username'));
 
         return $this->success(null, '删除成功');
@@ -197,6 +226,10 @@ class AdminController extends BaseController
         $id     = (int) ($id ?: $this->request->param('id'));
         $data   = $this->params();
         $status = (int) ($data['status'] ?? 0) === 1 ? 1 : 0;
+
+        if ($id === self::BUILTIN_SUPER_ADMIN_ID) {
+            return $this->fail('系统内置的初始超级管理员不可禁用');
+        }
 
         if ($id === Context::adminId()) {
             return $this->fail('不能禁用当前登录的账号');
@@ -214,47 +247,31 @@ class AdminController extends BaseController
     }
 
     /**
-     * 角色选项
+     * 把管理员加入指定用户组（幂等）
      */
-    public function roleOptions()
+    protected static function attachGroup(int $uid, int $groupId): void
     {
-        return $this->success(Admin::roleOptions());
-    }
-
-    /**
-     * 权限树（后台勾选分配用）
-     *
-     * 返回 config/permission.php 定义的完整树 + 所有叶子权限 key。
-     * 超级管理员不依赖勾选结果，始终拥有全部权限。
-     */
-    public function permissionTree()
-    {
-        $this->checkPermission('admin.list');
-
-        return $this->success([
-            'tree'    => Permission::tree(),
-            'allKeys' => Permission::allKeys(),
-        ]);
-    }
-
-    /**
-     * 查看某个管理员已分配的权限
-     */
-    public function adminPermissions($id = 0)
-    {
-        $this->checkPermission('admin.list');
-
-        $id = (int) ($id ?: $this->request->param('id'));
-        $row = Admin::where('id', $id)->whereNull('delete_time')->find();
-        if (!$row) {
-            return $this->fail('管理员不存在', 404);
+        if ($uid <= 0 || $groupId <= 0) {
+            return;
         }
+        Db::execute(
+            'INSERT IGNORE INTO `zsk_auth_group_access` (`uid`, `group_id`) VALUES (?, ?)',
+            [$uid, $groupId]
+        );
+    }
 
-        return $this->success([
-            'id'          => $id,
-            'role'        => $row->getAttr('role'),
-            'isSuper'     => $row->getAttr('role') === Admin::ROLE_ADMIN,
-            'permissions' => Permission::forAdmin($row->toArray()),
-        ]);
+    /**
+     * 用户组是否存在且处于启用状态
+     *
+     * 管理员的权限完全来自所属用户组，挂到不存在或已禁用的组上等于没有任何权限。
+     */
+    protected function groupExists(int $groupId): bool
+    {
+        return $groupId > 0
+            && Db::name('auth_group')
+                ->where('id', $groupId)
+                ->where('status', 1)
+                ->whereNull('delete_time')
+                ->count() > 0;
     }
 }

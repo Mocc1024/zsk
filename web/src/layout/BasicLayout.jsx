@@ -21,18 +21,42 @@ import {
   LockOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
+  MenuOutlined,
   MenuUnfoldOutlined,
+  SafetyCertificateOutlined,
+  SettingOutlined,
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../store/AuthContext';
 import { authApi } from '../api';
-import { roleLabel } from '../utils/constants';
 
 const { Header, Sider, Content } = Layout;
 
+/** 后端返回图标名 → 前端图标组件 */
+const ICONS = {
+  AppstoreOutlined: <AppstoreOutlined />,
+  DashboardOutlined: <DashboardOutlined />,
+  FileTextOutlined: <FileTextOutlined />,
+  HistoryOutlined: <HistoryOutlined />,
+  MenuOutlined: <MenuOutlined />,
+  SafetyCertificateOutlined: <SafetyCertificateOutlined />,
+  SettingOutlined: <SettingOutlined />,
+  TeamOutlined: <TeamOutlined />,
+  UserOutlined: <UserOutlined />,
+};
+
+/** 把后端菜单树转成 antd Menu items */
+const buildMenu = (nodes = []) =>
+  nodes.map((node) => ({
+    key: node.path || `k-${node.id}`,
+    icon: ICONS[node.icon] || <AppstoreOutlined />,
+    label: node.title,
+    children: node.children?.length ? buildMenu(node.children) : undefined,
+  }));
+
 export default function BasicLayout() {
-  const { admin, isSuper, hasPermission, logout } = useAuth();
+  const { admin, isSuper, hasPermission, menus, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -40,19 +64,11 @@ export default function BasicLayout() {
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
 
-  const menuItems = useMemo(() => {
-    const items = [
-      { key: '/dashboard', icon: <DashboardOutlined />, label: '数据看板', permission: 'dashboard.view' },
-      { key: '/content', icon: <FileTextOutlined />, label: '内容管理', permission: 'content.list' },
-      { key: '/category', icon: <AppstoreOutlined />, label: '分类管理', permission: 'category.list' },
-      { key: '/log', icon: <HistoryOutlined />, label: '操作日志', permission: 'log.list' },
-      { key: '/admin', icon: <TeamOutlined />, label: '管理员管理', permission: 'admin.list' },
-    ];
-    // 按权限过滤：只要该模块下任意一个权限点被勾选，菜单就显示
-    return items
-      .filter((item) => hasPermission(item.permission))
-      .map(({ key, icon, label }) => ({ key, icon, label }));
-  }, [hasPermission]);
+  // 菜单完全由后端下发（已按用户组权限过滤），前端只做渲染
+  const menuItems = useMemo(() => buildMenu(menus), [menus]);
+
+  // 顶栏展示当前用户所属的用户组
+  const groupText = (admin?.group_names || []).join('、') || '未分配';
 
   const selectedKey = useMemo(() => {
     const seg = location.pathname.split('/').filter(Boolean)[0] || 'dashboard';
@@ -87,7 +103,7 @@ export default function BasicLayout() {
 
   const userMenu = {
     items: [
-      { key: 'role', label: `角色：${roleLabel(admin?.role)}`, disabled: true },
+      { key: 'group', label: `用户组：${groupText}`, disabled: true },
       { type: 'divider' },
       { key: 'password', icon: <LockOutlined />, label: '修改密码' },
       { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
@@ -134,7 +150,7 @@ export default function BasicLayout() {
             style={{ fontSize: 16, width: 48, height: 48 }}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Tag color={isSuper ? 'blue' : 'green'}>{roleLabel(admin?.role)}</Tag>
+            <Tag color={isSuper ? 'blue' : 'green'}>{groupText}</Tag>
             <Dropdown menu={userMenu} placement="bottomRight">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <Avatar size="small" icon={<UserOutlined />} style={{ backgroundColor: '#2f54eb' }} />

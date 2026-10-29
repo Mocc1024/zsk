@@ -44,11 +44,13 @@ class LogController extends BaseController
         $list  = $query->order('id', 'desc')->page($page, $limit)->select()->toArray();
 
         $moduleMap = [
-            'auth'     => '认证',
-            'content'  => '内容',
-            'category' => '分类',
-            'admin'    => '管理员',
-            'system'   => '系统',
+            'auth'       => '认证',
+            'content'    => '内容',
+            'category'   => '分类',
+            'admin'      => '管理员',
+            'group'      => '用户组',
+            'permission' => '权限菜单',
+            'system'     => '系统',
         ];
         foreach ($list as &$item) {
             $item['module_text'] = $moduleMap[$item['module']] ?? $item['module'];

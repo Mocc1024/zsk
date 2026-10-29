@@ -110,6 +110,7 @@ export default function ContentList() {
       {
         title: '标题',
         dataIndex: 'title',
+        width: 260,
         ellipsis: true,
         render: (text, record) => (
           <Space size={6}>
@@ -137,10 +138,10 @@ export default function ContentList() {
       {
         title: '操作',
         key: 'action',
-        width: 220,
+        width: 320,
         fixed: 'right',
         render: (_, record) => (
-          <Space size={4}>
+          <Space size={0} style={{ flexWrap: 'nowrap' }}>
             {hasPermission('content.update') && (
               <Button
                 type="link"
@@ -268,7 +269,7 @@ export default function ContentList() {
           loading={loading}
           columns={columns}
           dataSource={list}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1310 }}
           rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
           onChange={(pagination, filters, sorter) => {
             if (sorter?.field) {

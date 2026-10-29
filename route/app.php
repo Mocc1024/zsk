@@ -42,12 +42,25 @@ Route::group('api', function () {
         Route::delete('category/:id', '\app\controller\CategoryController@delete');
         Route::put('category/:id/status', '\app\controller\CategoryController@setStatus');
 
-        // 权限
-        Route::get('permission/tree', '\app\controller\AdminController@permissionTree');
+        // 权限菜单管理
+        Route::get('permission/tree', '\app\controller\AuthRuleController@index');
+        Route::get('permission', '\app\controller\AuthRuleController@index');
+        Route::post('permission', '\app\controller\AuthRuleController@save');
+        Route::put('permission/:id', '\app\controller\AuthRuleController@update');
+        Route::put('permission/:id/status', '\app\controller\AuthRuleController@setStatus');
+        Route::delete('permission/:id', '\app\controller\AuthRuleController@delete');
+
+        // 用户组管理
+        Route::get('group/options', '\app\controller\AuthGroupController@options');
+        Route::get('group', '\app\controller\AuthGroupController@index');
+        Route::post('group', '\app\controller\AuthGroupController@save');
+        Route::get('group/:id/rules', '\app\controller\AuthGroupController@rules');
+        Route::put('group/:id', '\app\controller\AuthGroupController@update');
+        Route::put('group/:id/rules', '\app\controller\AuthGroupController@authorize');
+        Route::put('group/:id/status', '\app\controller\AuthGroupController@setStatus');
+        Route::delete('group/:id', '\app\controller\AuthGroupController@delete');
 
         // 管理员管理
-        Route::get('admin/role-options', '\app\controller\AdminController@roleOptions');
-        Route::get('admin/:id/permissions', '\app\controller\AdminController@adminPermissions');
         Route::get('admin', '\app\controller\AdminController@index');
         Route::post('admin', '\app\controller\AdminController@save');
         Route::put('admin/:id', '\app\controller\AdminController@update');
