@@ -1,0 +1,13 @@
+# 上传目录安全配置
+# 目标：图片/视频/附件可正常访问，任何脚本文件不得被执行
+#
+# 注意：若服务器未开启 AllowOverride AuthConfig，请改用 Nginx 配置
+#       （见 server/nginx-storage-security.conf），或直接在虚拟主机中拒绝脚本执行。
+
+# 禁止目录列表
+Options -Indexes
+
+# 禁止 PHP 等脚本文件被访问
+<FilesMatch "\.(?i:php|php3|php4|php5|php7|phtml|phar)$">
+  Require all denied
+</FilesMatch>

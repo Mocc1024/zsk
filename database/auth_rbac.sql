@@ -64,13 +64,16 @@ INSERT INTO `zsk_auth_rule` (`id`, `pid`, `type`, `title`, `name`, `path`, `icon
 (10, 0,  1, '数据看板',   'dashboard',  '/dashboard',  'DashboardOutlined', 100, 1, NOW(), NOW()),
 (11, 10, 2, '查看看板',   'dashboard.view', '',         '',                   1, 1, NOW(), NOW()),
 (20, 0,  1, '内容管理',   'content',    '/content',    'FileTextOutlined',   90, 1, NOW(), NOW()),
-(21, 20, 2, '查看列表',   'content.list',   '',         '',                  10, 1, NOW(), NOW()),
-(22, 20, 2, '新增内容',   'content.create', '',         '',                   9, 1, NOW(), NOW()),
-(23, 20, 2, '编辑内容',   'content.update', '',         '',                   8, 1, NOW(), NOW()),
-(24, 20, 2, '删除内容',   'content.delete', '',         '',                   7, 1, NOW(), NOW()),
-(25, 20, 2, '批量删除',   'content.batch-delete', '',   '',                  6, 1, NOW(), NOW()),
-(26, 20, 2, '发布/下架', 'content.status',  '',         '',                   5, 1, NOW(), NOW()),
-(27, 20, 2, '置顶操作',   'content.top',    '',         '',                   4, 1, NOW(), NOW()),
+-- 内容相关的操作权限点挂在「内容列表」#201 下（该菜单由 upgrade_menu_content_list.sql 创建）。
+-- 注意：不要把 #201 这类「带子节点的菜单」写进用户组 rules —— 授予菜单 ID 等于
+--       递归授予其下全部权限点，只读角色会被一并放大，详见 upgrade_menu_content_actions.sql
+(21, 201, 2, '查看列表',   'content.list',   '',         '',                  10, 1, NOW(), NOW()),
+(22, 201, 2, '新增内容',   'content.create', '',         '',                   9, 1, NOW(), NOW()),
+(23, 201, 2, '编辑内容',   'content.update', '',         '',                   8, 1, NOW(), NOW()),
+(24, 201, 2, '删除内容',   'content.delete', '',         '',                   7, 1, NOW(), NOW()),
+(25, 201, 2, '批量删除',   'content.batch-delete', '',   '',                  6, 1, NOW(), NOW()),
+(26, 201, 2, '发布/下架', 'content.status',  '',         '',                   5, 1, NOW(), NOW()),
+(27, 201, 2, '置顶操作',   'content.top',    '',         '',                   4, 1, NOW(), NOW()),
 (30, 0,  1, '分类管理',   'category',   '/category',   'AppstoreOutlined',    80, 1, NOW(), NOW()),
 (31, 30, 2, '查看列表',   'category.list',   '',        '',                  10, 1, NOW(), NOW()),
 (32, 30, 2, '新增分类',   'category.create', '',        '',                    9, 1, NOW(), NOW()),

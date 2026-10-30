@@ -27,11 +27,47 @@ Route::group('api', function () {
         Route::get('content', '\app\controller\ContentController@index');
         Route::post('content', '\app\controller\ContentController@save');
         Route::post('content/batch-delete', '\app\controller\ContentController@batchDelete');
+        // 具体路径必须排在 content/:id 之前，否则会被 :id 抢先匹配
+        Route::get('content/trash', '\app\controller\ContentController@trashed');
+        Route::get('content/trash/:id', '\app\controller\ContentController@trashedRead');
+        Route::post('content/autosave', '\app\controller\ContentController@autosave');
+        Route::post('content/batch-restore', '\app\controller\ContentController@batchRestore');
+        Route::post('content/batch-force-delete', '\app\controller\ContentController@batchForceDelete');
+        Route::post('content/export', '\app\controller\ContentController@export');
+
         Route::get('content/:id', '\app\controller\ContentController@read');
         Route::put('content/:id', '\app\controller\ContentController@update');
         Route::delete('content/:id', '\app\controller\ContentController@delete');
         Route::put('content/:id/status', '\app\controller\ContentController@setStatus');
         Route::put('content/:id/top', '\app\controller\ContentController@setTop');
+        Route::post('content/:id/restore', '\app\controller\ContentController@restore');
+        Route::post('content/:id/force-delete', '\app\controller\ContentController@forceDelete');
+        Route::post('content/:id/copy', '\app\controller\ContentController@copy');
+
+        // 文件上传（素材库）
+        Route::post('upload/image', '\app\controller\UploadController@image');
+        Route::post('upload/video', '\app\controller\UploadController@video');
+        Route::post('upload/file', '\app\controller\UploadController@file');
+
+        // 素材分组（具体路径排在 attachment/:id 之前）
+        Route::get('attachment/folders', '\app\controller\AttachmentFolderController@index');
+        Route::post('attachment/folders', '\app\controller\AttachmentFolderController@save');
+        Route::put('attachment/folders/:id', '\app\controller\AttachmentFolderController@update');
+        Route::delete('attachment/folders/:id', '\app\controller\AttachmentFolderController@delete');
+
+        // 素材库
+        Route::get('attachment', '\app\controller\AttachmentController@index');
+        Route::put('attachment/move', '\app\controller\AttachmentController@move');
+        Route::put('attachment/:id', '\app\controller\AttachmentController@update');
+        Route::delete('attachment/:id', '\app\controller\AttachmentController@delete');
+        Route::post('attachment/batch-delete', '\app\controller\AttachmentController@batchDelete');
+
+        // 标签管理
+        Route::get('tag/options', '\app\controller\TagController@options');
+        Route::get('tag', '\app\controller\TagController@index');
+        Route::post('tag', '\app\controller\TagController@save');
+        Route::put('tag/:id', '\app\controller\TagController@update');
+        Route::delete('tag/:id', '\app\controller\TagController@delete');
 
         // 分类管理
         Route::get('category/options', '\app\controller\CategoryController@options');

@@ -3,18 +3,30 @@ import { authApi } from '../api';
 
 const AuthContext = createContext(null);
 
+/** 读取本地缓存，解析失败时返回兜底值，避免脏数据导致白屏 */
+function readCache(key, fallback) {
+  try {
+    const cached = localStorage.getItem(key);
+    return cached ? JSON.parse(cached) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
 export function AuthProvider({ children }) {
-  const [admin, setAdmin] = useState(() => {
-    const cached = localStorage.getItem('zsk_admin');
-    return cached ? JSON.parse(cached) : null;
-  });
-  const [permissions, setPermissions] = useState([]);
-  const [menus, setMenus] = useState([]);
+  const [admin, setAdmin] = useState(() => readCache('zsk_admin', null));
+  // 同步从本地恢复：刷新后首次渲染就有权限，避免操作列/菜单先空后闪
+  const [permissions, setPermissions] = useState(() => readCache('zsk_permissions', []));
+  const [menus, setMenus] = useState(() => readCache('zsk_menus', []));
   const [loading, setLoading] = useState(false);
 
   const token = localStorage.getItem('zsk_token');
 
   const setSession = useCallback((nextToken, nextAdmin, nextPermissions, nextMenus) => {
+    // 登录即全新会话：丢弃上一个账号 / 上一次残留的菜单展开状态，
+    // 否则换账号登录后会把前任展开过的分组原样继承下来
+    localStorage.removeItem('zsk_menu_open_keys');
+
     if (nextToken) {
       localStorage.setItem('zsk_token', nextToken);
     }
@@ -37,24 +49,13 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('zsk_admin');
     localStorage.removeItem('zsk_permissions');
     localStorage.removeItem('zsk_menus');
+    localStorage.removeItem('zsk_menu_open_keys');
     setAdmin(null);
     setPermissions([]);
     setMenus([]);
   }, []);
 
-  // 刷新后先从本地恢复权限与菜单，避免菜单闪烁
-  useEffect(() => {
-    const cached = localStorage.getItem('zsk_permissions');
-    if (cached) {
-      setPermissions(JSON.parse(cached));
-    }
-    const cachedMenus = localStorage.getItem('zsk_menus');
-    if (cachedMenus) {
-      setMenus(JSON.parse(cachedMenus));
-    }
-  }, []);
-
-  // 已有令牌但用户信息/权限缺失时，拉取一次（仅一次，避免死循环）
+  // 已有令牌时拉取一次最新权限（仅一次，避免死循环）
   const fetchedRef = useRef(false);
   useEffect(() => {
     if (!token || fetchedRef.current) {

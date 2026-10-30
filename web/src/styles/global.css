@@ -204,3 +204,48 @@ body {
   font-size: 12px;
   margin-top: 6px;
 }
+
+/* 富文本只读预览（回收站查看正文等）：
+   内部图片/视频/表格一律不超出容器宽度，避免出现横向滚动条；
+   容器自身不设固定高度，纵向随内容自然展开 */
+.rich-preview {
+  padding: 12px 14px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  background: #fafafa;
+  color: rgba(0, 0, 0, 0.88);
+  line-height: 1.75;
+  overflow-x: hidden;
+  word-break: break-word;
+}
+
+.rich-preview img,
+.rich-preview video,
+.rich-preview svg,
+.rich-preview canvas {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.rich-preview iframe {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.rich-preview table {
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.rich-preview th,
+.rich-preview td {
+  word-break: break-word;
+}
+
+.rich-preview pre,
+.rich-preview code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}

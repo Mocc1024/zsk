@@ -6,6 +6,9 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ContentList from './pages/ContentList';
 import ContentEdit from './pages/ContentEdit';
+import ContentTrash from './pages/ContentTrash';
+import AttachmentList from './pages/AttachmentList';
+import TagList from './pages/TagList';
 import CategoryList from './pages/CategoryList';
 import AdminList from './pages/AdminList';
 import GroupList from './pages/GroupList';
@@ -44,7 +47,10 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="content" element={<ContentList />} />
         <Route path="content/create" element={<ContentEdit />} />
+        <Route path="content/trash" element={<ContentTrash />} />
         <Route path="content/edit/:id" element={<ContentEdit />} />
+        <Route path="attachment" element={<AttachmentList />} />
+        <Route path="tag" element={<TagList />} />
         <Route path="category" element={<CategoryList />} />
         <Route path="admin" element={<AdminList />} />
         <Route path="group" element={<GroupList />} />

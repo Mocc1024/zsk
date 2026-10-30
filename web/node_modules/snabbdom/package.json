@@ -1,0 +1,104 @@
+{
+  "name": "snabbdom",
+  "version": "3.6.4",
+  "description": "A virtual DOM library with focus on simplicity, modularity, powerful features and performance.",
+  "homepage": "https://github.com/snabbdom/snabbdom#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/snabbdom/snabbdom.git"
+  },
+  "keywords": [
+    "virtual",
+    "dom",
+    "vdom",
+    "light",
+    "kiss",
+    "performance"
+  ],
+  "author": "Simon Friis Vindum",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/snabbdom/snabbdom/issues"
+  },
+  "engines": {
+    "node": ">=12.17.0"
+  },
+  "files": [
+    "build"
+  ],
+  "type": "module",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc && ts-add-js-extension --dir=build",
+    "examples": "serve .",
+    "format": "prettier --write .",
+    "format-check": "prettier --check .",
+    "prepare": "husky",
+    "lint": "eslint .",
+    "unit": "web-test-runner \"test/unit/*.{ts,tsx}\" --node-resolve --coverage",
+    "release": "npm run test && release-it",
+    "test": "npm run build && npm run lint && npm run unit",
+    "test:watch": "web-test-runner \"test/unit/*.{tsx,tsx}\" --node-resolve --watch"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@eslint/markdown": "^7.3.0",
+    "@esm-bundle/chai": "^4.3.4-fix.0",
+    "@release-it/conventional-changelog": "^10.0.1",
+    "@types/chai": "5.2.2",
+    "@types/mocha": "10.0.10",
+    "@web/dev-server-esbuild": "^1.0.4",
+    "@web/test-runner": "^0.20.2",
+    "@web/test-runner-browserstack": "^0.8.0",
+    "commithelper": "^1.2.0",
+    "conventional-changelog-angular": "^8.0.0",
+    "eslint": "9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.1",
+    "husky": "9.1.7",
+    "lint-staged": "^16.2.3",
+    "mocha": "11.7.3",
+    "prettier": "^3.6.2",
+    "release-it": "^19.0.5",
+    "serve": "^14.2.5",
+    "ts-add-js-extension": "^1.6.6",
+    "typescript": "5.9.2",
+    "typescript-eslint": "^8.45.0"
+  },
+  "prettier": {
+    "trailingComma": "none"
+  },
+  "lint-staged": {
+    "*.(ts|tsx|js|md)": "prettier --write"
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore(release): v${version}"
+    },
+    "github": {
+      "release": true
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": "angular",
+        "infile": "CHANGELOG.md"
+      }
+    }
+  },
+  "commithelper": {
+    "scopeOverrides": {
+      "chore": [
+        "tools",
+        "refactor",
+        "release",
+        "test",
+        "deps",
+        "docs",
+        "examples"
+      ]
+    }
+  }
+}

@@ -14,11 +14,42 @@ return [
     ['GET', 'api/content', 'content.list'],
     ['POST', 'api/content', 'content.create'],
     ['POST', 'api/content/batch-delete', 'content.batch-delete'],
+    // 具体路径必须排在 api/content/:id 之前，否则被 :id 抢先匹配
+    ['GET', 'api/content/trash', 'content.list'],
+    ['GET', 'api/content/trash/:id', 'content.list'],
+    ['POST', 'api/content/autosave', 'content.update'],
+    ['POST', 'api/content/batch-restore', 'content.restore'],
+    ['POST', 'api/content/batch-force-delete', 'content.force-delete'],
+    ['POST', 'api/content/export', 'content.export'],
     ['GET', 'api/content/:id', 'content.list'],
     ['PUT', 'api/content/:id', 'content.update'],
     ['DELETE', 'api/content/:id', 'content.delete'],
     ['PUT', 'api/content/:id/status', 'content.status'],
     ['PUT', 'api/content/:id/top', 'content.top'],
+    ['POST', 'api/content/:id/restore', 'content.restore'],
+    ['POST', 'api/content/:id/force-delete', 'content.force-delete'],
+    ['POST', 'api/content/:id/copy', 'content.copy'],
+
+    // 文件上传与素材库
+    ['POST', 'api/upload/image', 'attachment.upload'],
+    ['POST', 'api/upload/video', 'attachment.upload'],
+    ['POST', 'api/upload/file', 'attachment.upload'],
+    ['GET', 'api/attachment/folders', 'attachment.list'],
+    ['POST', 'api/attachment/folders', 'attachment.folder'],
+    ['PUT', 'api/attachment/folders/:id', 'attachment.folder'],
+    ['DELETE', 'api/attachment/folders/:id', 'attachment.folder'],
+    ['GET', 'api/attachment', 'attachment.list'],
+    ['PUT', 'api/attachment/move', 'attachment.update'],
+    ['PUT', 'api/attachment/:id', 'attachment.update'],
+    ['DELETE', 'api/attachment/:id', 'attachment.delete'],
+    ['POST', 'api/attachment/batch-delete', 'attachment.delete'],
+
+    // 标签管理
+    ['GET', 'api/tag/options', 'tag.list'],
+    ['GET', 'api/tag', 'tag.list'],
+    ['POST', 'api/tag', 'tag.create'],
+    ['PUT', 'api/tag/:id', 'tag.update'],
+    ['DELETE', 'api/tag/:id', 'tag.delete'],
 
     // 分类管理
     ['GET', 'api/category/options', 'category.list'],
@@ -34,10 +65,8 @@ return [
     ['DELETE', 'api/log/clear', 'log.clear'],
 
     // 管理员管理
-    ['GET', 'api/admin/role-options', 'admin.list'],
     ['GET', 'api/admin', 'admin.list'],
     ['POST', 'api/admin', 'admin.create'],
-    ['GET', 'api/admin/:id/permissions', 'admin.list'],
     ['PUT', 'api/admin/:id', 'admin.update'],
     ['DELETE', 'api/admin/:id', 'admin.delete'],
     ['PUT', 'api/admin/:id/status', 'admin.status'],

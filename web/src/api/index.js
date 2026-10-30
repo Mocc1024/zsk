@@ -23,6 +23,52 @@ export const contentApi = {
   batchDelete: (ids) => request.post('/content/batch-delete', { ids }),
   setStatus: (id, status) => request.put(`/content/${id}/status`, { status }),
   setTop: (id, isTop) => request.put(`/content/${id}/top`, { is_top: isTop ? 1 : 0 }),
+  // 自动保存（M2.4）
+  autosave: (data) => request.post('/content/autosave', data),
+  // 回收站（M2.3）
+  trash: (params) => request.get('/content/trash', { params }),
+  trashDetail: (id) => request.get(`/content/trash/${id}`),
+  restore: (id) => request.post(`/content/${id}/restore`),
+  forceDelete: (id) => request.post(`/content/${id}/force-delete`),
+  batchRestore: (ids) => request.post('/content/batch-restore', { ids }),
+  batchForceDelete: (ids) => request.post('/content/batch-force-delete', { ids }),
+  // 复制（M2.5）
+  copy: (id, data) => request.post(`/content/${id}/copy`, data),
+  // 导出（M2.6）
+  exportFile: (data) => request.post('/content/export', data),
+};
+
+/** 文件上传 */
+export const uploadApi = {
+  image: (formData) => request.post('/upload/image', formData, { timeout: 120000 }),
+  video: (formData) => request.post('/upload/video', formData, { timeout: 120000 }),
+  file: (formData) => request.post('/upload/file', formData, { timeout: 120000 }),
+};
+
+/** 素材库 */
+export const attachmentApi = {
+  list: (params) => request.get('/attachment', { params }),
+  folders: () => request.get('/attachment/folders'),
+  update: (id, data) => request.put(`/attachment/${id}`, data),
+  remove: (id) => request.delete(`/attachment/${id}`),
+  batchDelete: (ids) => request.post('/attachment/batch-delete', { ids }),
+  move: (ids, folder) => request.put('/attachment/move', { ids, folder }),
+};
+
+/** 素材分组 */
+export const folderApi = {
+  create: (data) => request.post('/attachment/folders', data),
+  update: (id, data) => request.put(`/attachment/folders/${id}`, data),
+  remove: (id) => request.delete(`/attachment/folders/${id}`),
+};
+
+/** 标签管理 */
+export const tagApi = {
+  list: (params) => request.get('/tag', { params }),
+  options: () => request.get('/tag/options'),
+  create: (data) => request.post('/tag', data),
+  update: (id, data) => request.put(`/tag/${id}`, data),
+  remove: (id) => request.delete(`/tag/${id}`),
 };
 
 /** 分类管理 */
@@ -43,7 +89,6 @@ export const adminApi = {
   update: (id, data) => request.put(`/admin/${id}`, data),
   remove: (id) => request.delete(`/admin/${id}`),
   setStatus: (id, status) => request.put(`/admin/${id}/status`, { status }),
-  permissions: (id) => request.get(`/admin/${id}/permissions`),
 };
 
 /** 权限菜单 */

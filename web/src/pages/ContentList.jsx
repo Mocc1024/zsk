@@ -7,8 +7,6 @@ import {
   Dropdown,
   Form,
   Input,
-  InputNumber,
-  Modal,
   Popconfirm,
   Select,
   Space,
@@ -18,15 +16,17 @@ import {
   message,
 } from 'antd';
 import {
+  CopyOutlined,
   DeleteOutlined,
+  DownOutlined,
   EditOutlined,
+  ExportOutlined,
   PlusOutlined,
   PushpinOutlined,
   ReloadOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import dayjs from 'dayjs';
-import { categoryApi, contentApi } from '../api';
+import { categoryApi, contentApi, tagApi } from '../api';
 import { useAuth } from '../store/AuthContext';
 import { CONTENT_STATUS, contentStatusColor, contentStatusLabel } from '../utils/constants';
 
@@ -40,6 +40,7 @@ export default function ContentList() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [tags, setTags] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [query, setQuery] = useState({ page: 1, limit: 10 });
 
@@ -62,6 +63,10 @@ export default function ContentList() {
     categoryApi.options().then((res) => setCategories(res.data || []));
   }, []);
 
+  useEffect(() => {
+    tagApi.options().then((res) => setTags(res.data || []));
+  }, []);
+
   const handleSearch = (values) => {
     const [start, end] = values.range || [];
     setQuery((prev) => ({
@@ -70,6 +75,7 @@ export default function ContentList() {
       keyword: values.keyword || undefined,
       category_id: values.category_id,
       status: values.status,
+      tag_id: values.tag_id || undefined,
       start_date: start ? start.format('YYYY-MM-DD') : undefined,
       end_date: end ? end.format('YYYY-MM-DD') : undefined,
     }));
@@ -100,6 +106,47 @@ export default function ContentList() {
     fetchList();
   };
 
+  /** 复制为草稿 */
+  const handleCopy = async (record) => {
+    const res = await contentApi.copy(record.id, {});
+    message.success(res.msg || '已复制为草稿');
+    fetchList();
+  };
+
+  /** 导出：把后端返回的文本/二进制组装成文件下载 */
+  const handleExport = async (format) => {
+    const ids = selectedRowKeys.length ? selectedRowKeys : undefined;
+    try {
+      const res = await contentApi.exportFile({ format, ids });
+      const { filename, mime, encoding, content } = res.data || {};
+
+      let blob;
+      if (encoding === 'base64') {
+        const binary = atob(content || '');
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        blob = new Blob([bytes], { type: mime });
+      } else {
+        blob = new Blob([content || ''], { type: `${mime};charset=utf-8` });
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      message.success(res.msg || '导出成功');
+    } catch (e) {
+      // 错误提示已由拦截器统一处理
+    }
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -127,6 +174,25 @@ export default function ContentList() {
       },
       { title: '作者', dataIndex: 'author', width: 100 },
       {
+        title: '标签',
+        dataIndex: 'tags',
+        width: 180,
+        render: (values) => {
+          const names = Array.isArray(values) ? values : [];
+          if (!names.length) return <span style={{ color: '#bfbfbf' }}>—</span>;
+          return (
+            <Space size={4} wrap>
+              {names.slice(0, 3).map((name) => (
+                <Tag key={name} color="blue">
+                  {name}
+                </Tag>
+              ))}
+              {names.length > 3 && <Tag>+{names.length - 3}</Tag>}
+            </Space>
+          );
+        },
+      },
+      {
         title: '状态',
         dataIndex: 'status',
         width: 100,
@@ -138,7 +204,7 @@ export default function ContentList() {
       {
         title: '操作',
         key: 'action',
-        width: 320,
+        width: 400,
         fixed: 'right',
         render: (_, record) => (
           <Space size={0} style={{ flexWrap: 'nowrap' }}>
@@ -174,6 +240,16 @@ export default function ContentList() {
                 {record.is_top === 1 ? '取消置顶' : '置顶'}
               </Button>
             )}
+            {hasPermission('content.copy') && (
+              <Button
+                type="link"
+                size="small"
+                icon={<CopyOutlined />}
+                onClick={() => handleCopy(record)}
+              >
+                复制
+              </Button>
+            )}
             {hasPermission('content.delete') && (
               <Popconfirm title="确认删除该内容？" onConfirm={() => handleDelete(record.id)}>
                 <Button type="link" size="small" danger icon={<DeleteOutlined />}>
@@ -185,7 +261,9 @@ export default function ContentList() {
         ),
       },
     ],
-    [navigate, fetchList]
+    // 必须依赖 hasPermission：刷新页面时权限是异步恢复的，
+    // 缺少该依赖会导致操作列按首次渲染时的空权限缓存下来，按钮全部不显示
+    [navigate, fetchList, hasPermission]
   );
 
   return (
@@ -205,6 +283,16 @@ export default function ContentList() {
               placeholder="全部分类"
               style={{ width: 150 }}
               options={categories.map((item) => ({ label: item.name, value: item.id }))}
+            />
+          </Form.Item>
+          <Form.Item name="tag_id">
+            <Select
+              allowClear
+              placeholder="全部标签"
+              style={{ width: 150 }}
+              showSearch
+              optionFilterProp="label"
+              options={tags.map((item) => ({ label: item.label, value: item.id }))}
             />
           </Form.Item>
           <Form.Item name="status">
@@ -244,6 +332,21 @@ export default function ContentList() {
                 新建内容
               </Button>
             )}
+            {hasPermission('content.export') && (
+              <Dropdown
+                menu={{
+                  items: [
+                    { key: 'csv', label: '导出为 CSV（Excel 可直接打开）' },
+                    { key: 'zip', label: '导出 Markdown 压缩包' },
+                  ],
+                  onClick: ({ key }) => handleExport(key),
+                }}
+              >
+                <Button icon={<ExportOutlined />}>
+                  导出{selectedRowKeys.length > 0 ? `（${selectedRowKeys.length}）` : '全部'} <DownOutlined />
+                </Button>
+              </Dropdown>
+            )}
             {hasPermission('content.batch-delete') && (
             <Popconfirm
               title={`确认删除选中的 ${selectedRowKeys.length} 条内容？`}
@@ -269,7 +372,7 @@ export default function ContentList() {
           loading={loading}
           columns={columns}
           dataSource={list}
-          scroll={{ x: 1310 }}
+          scroll={{ x: 1700 }}
           rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
           onChange={(pagination, filters, sorter) => {
             if (sorter?.field) {

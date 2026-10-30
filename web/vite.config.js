@@ -21,6 +21,11 @@ export default defineConfig({
         target: API_TARGET,
         changeOrigin: true,
       },
+      // 素材库上传的图片直接由 PHP 服务提供，开发环境同样转发
+      '/storage': {
+        target: API_TARGET,
+        changeOrigin: true,
+      },
     },
   },
 });

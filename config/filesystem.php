@@ -1,8 +1,9 @@
 <?php
 
 return [
-    // 默认磁盘
-    'default' => 'local',
+    // 默认磁盘（第二阶段起素材库对外可见，统一使用 public 磁盘：
+    // 物理目录 public/storage，访问 URL /storage）
+    'default' => 'public',
     // 磁盘列表
     'disks'   => [
         'local'  => [

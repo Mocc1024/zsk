@@ -21,8 +21,6 @@ CREATE TABLE `zsk_admin` (
   `password`        VARCHAR(255)    NOT NULL DEFAULT '' COMMENT '密码(bcrypt)',
   `nickname`        VARCHAR(50)     NOT NULL DEFAULT '' COMMENT '昵称',
   `avatar`          VARCHAR(255)    NOT NULL DEFAULT '' COMMENT '头像',
-  `role`            VARCHAR(20)     NOT NULL DEFAULT 'editor' COMMENT '角色 admin/editor',
-  `permissions`     TEXT            NULL COMMENT '权限点集合 JSON数组 如["content.list"] 超管为NULL',
   `email`           VARCHAR(100)    NOT NULL DEFAULT '' COMMENT '邮箱',
   `status`          TINYINT(1)      NOT NULL DEFAULT 1 COMMENT '状态 1启用 0禁用',
   `last_login_ip`   VARCHAR(45)     NOT NULL DEFAULT '' COMMENT '最后登录IP',
@@ -102,11 +100,11 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ----------------------------
 -- 初始管理员（admin / admin123、editor / editor123）
 -- ----------------------------
--- 超级管理员 permissions 为 NULL，代码里直接赋予全部权限；
--- editor 默认给一套「常用编辑权限」，可在后台重新勾选分配
-INSERT INTO `zsk_admin` (`id`, `username`, `password`, `nickname`, `avatar`, `role`, `permissions`, `email`, `status`, `create_time`, `update_time`) VALUES
-(1, 'admin',  '$2y$10$vJWdKz/j/5//zDiDSTB3oe94lX9BbKZKR2oQ/XbMtec.Qtx0toRVe', '超级管理员', '', 'admin',  NULL, 'admin@zsk.com',  1, NOW(), NOW()),
-(2, 'editor', '$2y$10$9SpTMZAwMUx/TsPeRU9cee37d8fGe2.WLYEPf/P4mTQOYb6VAFz/m', '内容编辑',   '', 'editor', '["dashboard.view","content.list","content.create","content.update","category.list"]', 'editor@zsk.com', 1, NOW(), NOW());
+-- 权限全部由所属用户组（zsk_auth_group.rules）实时派生，
+-- 管理员表不再保存权限字段，避免在两处维护同一份权限
+INSERT INTO `zsk_admin` (`id`, `username`, `password`, `nickname`, `avatar`, `email`, `status`, `create_time`, `update_time`) VALUES
+(1, 'admin',  '$2y$10$vJWdKz/j/5//zDiDSTB3oe94lX9BbKZKR2oQ/XbMtec.Qtx0toRVe', '超级管理员', '', 'admin@zsk.com',  1, NOW(), NOW()),
+(2, 'editor', '$2y$10$9SpTMZAwMUx/TsPeRU9cee37d8fGe2.WLYEPf/P4mTQOYb6VAFz/m', '内容编辑',   '', 'editor@zsk.com', 1, NOW(), NOW());
 
 -- ----------------------------
 -- 初始分类

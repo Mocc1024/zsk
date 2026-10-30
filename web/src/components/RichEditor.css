@@ -1,0 +1,65 @@
+/* 富文本编辑器（WangEditor 5）容器样式与全屏适配 */
+
+.rich-editor {
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  /* 不能用 overflow: hidden —— 工具栏的下拉面板（字号、颜色、更多菜单）
+     是绝对定位元素，会被容器裁掉 */
+  overflow: visible;
+}
+
+.rich-editor > div:first-child {
+  border-bottom: 1px solid #f0f0f0;
+  border-radius: 6px 6px 0 0;
+}
+
+.rich-editor > div:last-child {
+  border-radius: 0 0 6px 6px;
+}
+
+/**
+ * 编辑区高度：由组件通过 CSS 变量 --editor-height 传入。
+ * 必须走 CSS 而不是内联 style —— 内联样式在全屏时无法被覆盖，
+ * 会导致全屏后编辑区仍是原来的高度。
+ */
+.rich-editor [data-w-e-textarea='true'] {
+  height: var(--editor-height, 480px);
+}
+
+/**
+ * 全屏：点击工具栏「全屏」后，WangEditor 会给「工具栏 + 编辑区的共同父容器」
+ * 加上 .w-e-full-screen-container，规则只有
+ * position: fixed; inset: 0; display: flex; flex-direction: column。
+ * 它没做三件事，需要这里补齐：
+ *   1. 没有 z-index —— 后台里任何定位元素（头部、侧边栏、吸顶操作条）都会盖住它
+ *   2. 没有清理圆角 / 边框 / 背景 —— 全屏后四角仍是圆角，边缘露出下层页面
+ *   3. 高度沿用固定值 —— 编辑区高度应交给 flex:1，并允许内部滚动
+ */
+.rich-editor.w-e-full-screen-container {
+  z-index: 1000;
+  border-color: transparent;
+  border-radius: 0;
+  background: #fff;
+  overflow: hidden;
+}
+
+.rich-editor.w-e-full-screen-container > div:first-child,
+.rich-editor.w-e-full-screen-container > div:last-child {
+  border-radius: 0;
+}
+
+/* 工具栏不参与 flex 压缩，否则图标多时会被挤扁 */
+.rich-editor.w-e-full-screen-container > div:first-child {
+  flex: none;
+}
+
+.rich-editor.w-e-full-screen-container [data-w-e-textarea='true'] {
+  height: auto !important;
+  overflow-y: auto !important;
+}
+
+/* 全屏期间锁住页面滚动，避免背景跟着动（由组件切换这个 class） */
+body.rich-editor-fullscreen {
+  overflow: hidden;
+}
