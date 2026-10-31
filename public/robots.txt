@@ -1,2 +1,9 @@
+# ZSK 知识库 robots.txt
+# 允许所有搜索引擎抓取公开内容；后台与接口不收录
+
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: /sitemap.xml

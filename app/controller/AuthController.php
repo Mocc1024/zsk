@@ -47,6 +47,9 @@ class AuthController extends BaseController
         $token = Jwt::encode([
             'id'       => $admin->getAttr('id'),
             'username' => $admin->getAttr('username'),
+            // 角色与类型：后台令牌必须显式声明，否则无法与 C 端令牌区分
+            'role'     => Jwt::ROLE_ADMIN,
+            'type'     => Jwt::TYPE_ACCESS,
         ], $ttl);
 
         $profile = $admin->toArray();

@@ -86,7 +86,13 @@ class ContentController extends BaseController
 
         $sortField = (string) ($params['sort_field'] ?? 'c.id');
         $sortOrder = strtolower((string) ($params['sort_order'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
-        if (!in_array($sortField, ['c.id', 'c.sort', 'c.views', 'c.create_time', 'c.publish_time'], true)) {
+        // 排序字段白名单：字段名会直接拼进 ORDER BY，不能信任前端传值。
+        // 不在名单里的一律退回 c.id，避免 SQL 注入。
+        if (!in_array(
+            $sortField,
+            ['c.id', 'c.sort', 'c.views', 'c.comment_count', 'c.create_time', 'c.publish_time'],
+            true
+        )) {
             $sortField = 'c.id';
         }
 

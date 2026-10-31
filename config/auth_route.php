@@ -81,6 +81,53 @@ return [
     ['DELETE', 'api/group/:id', 'group.delete'],
     ['PUT', 'api/group/:id/status', 'group.status'],
 
+    // 开放平台（应用管理）
+    // 注意：api/open-app 与第三方调用的 api/open/* 是两组路由，不要混淆
+    ['GET', 'api/open-app', 'open.list'],
+    ['POST', 'api/open-app', 'open.create'],
+    ['GET', 'api/open-app/:id', 'open.list'],
+    ['PUT', 'api/open-app/:id', 'open.update'],
+    ['PUT', 'api/open-app/:id/status', 'open.status'],
+    ['POST', 'api/open-app/:id/rotate', 'open.rotate'],
+
+    // C 端用户管理（M3.7）
+    ['GET', 'api/user-manage', 'user.list'],
+    ['POST', 'api/user-manage', 'user.create'],
+    ['GET', 'api/user-manage/:id', 'user.view'],
+    ['PUT', 'api/user-manage/:id', 'user.update'],
+    ['PUT', 'api/user-manage/:id/status', 'user.status'],
+    ['POST', 'api/user-manage/:id/reset-password', 'user.reset-password'],
+    ['POST', 'api/user-manage/:id/points', 'user.points'],
+    ['POST', 'api/user-manage/:id/exp', 'user.exp'],
+    ['POST', 'api/user-manage/:id/restore', 'user.update'],
+
+    // 等级规则
+    ['GET', 'api/level', 'level.list'],
+    ['POST', 'api/level', 'level.create'],
+    ['PUT', 'api/level/:id', 'level.update'],
+    ['POST', 'api/level/recalculate', 'level.update'],
+
+    // 积分规则与统计
+    ['GET', 'api/points/rule', 'points.rule'],
+    ['POST', 'api/points/rule', 'points.rule'],
+    ['GET', 'api/points/stat', 'points.stat'],
+
+    // 评论审核与配置（具体路径必须排在 :id 之前）
+    ['GET', 'api/comment-audit/config', 'comment.config'],
+    ['PUT', 'api/comment-audit/config', 'comment.config'],
+    ['GET', 'api/comment-audit', 'comment.list'],
+    ['PUT', 'api/comment-audit/:id/audit', 'comment.audit'],
+    ['DELETE', 'api/comment-audit/:id', 'comment.delete'],
+
+    // 敏感词库
+    ['GET', 'api/sensitive-word', 'comment.config'],
+    ['POST', 'api/sensitive-word', 'comment.config'],
+    ['DELETE', 'api/sensitive-word/:id', 'comment.config'],
+
+    // 举报处理
+    ['GET', 'api/report', 'report.list'],
+    ['PUT', 'api/report/:id/handle', 'report.handle'],
+
     // 权限菜单管理
     ['GET', 'api/permission/tree', 'permission.list'],
     ['GET', 'api/permission', 'permission.list'],

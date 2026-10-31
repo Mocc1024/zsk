@@ -12,6 +12,7 @@ import {
   Space,
   Table,
   Tag,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
@@ -31,6 +32,13 @@ import { useAuth } from '../store/AuthContext';
 import { CONTENT_STATUS, contentStatusColor, contentStatusLabel } from '../utils/constants';
 
 const { RangePicker } = DatePicker;
+
+// 前台站点地址。当前前后台同域部署（后台 /admin/，前台 /），
+// 用相对站点根路径即可；若前后台分离部署，设置 VITE_FRONT_BASE 指向前台域名。
+const FRONT_BASE = import.meta.env.VITE_FRONT_BASE || '';
+
+/** 前台只对外展示「已发布」的内容（ContentReader 按 status=1 过滤） */
+const frontUrl = (id) => `${FRONT_BASE}/content/${id}`;
 
 export default function ContentList() {
   const navigate = useNavigate();
@@ -159,12 +167,32 @@ export default function ContentList() {
         dataIndex: 'title',
         width: 260,
         ellipsis: true,
-        render: (text, record) => (
-          <Space size={6}>
-            {record.is_top === 1 && <Tag color="volcano">置顶</Tag>}
-            <a onClick={() => navigate(`/content/edit/${record.id}`)}>{text}</a>
-          </Space>
-        ),
+        render: (text, record) => {
+          // 编辑入口在操作列；标题点开是前台页面，新标签页打开，
+          // 免得从后台跳走后还得点回来。
+          const viewable = Number(record.status) === 1;
+
+          return (
+            <Space size={6}>
+              {record.is_top === 1 && <Tag color="volcano">置顶</Tag>}
+              {viewable ? (
+                <a
+                  href={frontUrl(record.id)}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={`${text}（在前台查看）`}
+                >
+                  {text}
+                </a>
+              ) : (
+                // 草稿 / 已下架在前台查不到，给了链接点过去只会看到「内容不存在」
+                <Tooltip title="未发布，前台暂不可见">
+                  <span style={{ color: '#8c8c8c' }}>{text}</span>
+                </Tooltip>
+              )}
+            </Space>
+          );
+        },
       },
       {
         title: '分类',
@@ -199,6 +227,9 @@ export default function ContentList() {
         render: (v) => <Tag color={contentStatusColor(v)}>{contentStatusLabel(v)}</Tag>,
       },
       { title: '浏览量', dataIndex: 'views', width: 90, sorter: true },
+      // comment_count 是冗余计数，只统计「审核通过」的评论，
+      // 待审和已驳回的不计 —— 与评论审核列表的口径一致
+      { title: '评论数', dataIndex: 'comment_count', width: 90, sorter: true },
       { title: '排序', dataIndex: 'sort', width: 80, sorter: true },
       { title: '创建时间', dataIndex: 'create_time', width: 170 },
       {

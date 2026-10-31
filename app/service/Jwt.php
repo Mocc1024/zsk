@@ -8,6 +8,14 @@ namespace app\service;
  */
 class Jwt
 {
+    /** 令牌角色：后台管理员 / C 端用户，两套体系互不串用 */
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_USER  = 'user';
+
+    /** 令牌类型：Refresh Token 不得当作 Access Token 访问业务接口 */
+    public const TYPE_ACCESS  = 'access';
+    public const TYPE_REFRESH = 'refresh';
+
     /**
      * 获取密钥
      */
@@ -69,6 +77,39 @@ class Jwt
         }
 
         return $payload;
+    }
+
+    /**
+     * 取令牌角色。旧令牌没有该字段时返回空字符串，
+     * 调用方据此拒绝——不猜测、不兜底放行，避免跨体系串用。
+     */
+    public static function roleOf(?array $payload): string
+    {
+        return (string) ($payload['role'] ?? '');
+    }
+
+    /**
+     * 取令牌类型，缺省按 access 处理
+     */
+    public static function typeOf(?array $payload): string
+    {
+        return (string) ($payload['type'] ?? self::TYPE_ACCESS);
+    }
+
+    /**
+     * C 端用户 Access Token 有效期（秒）
+     */
+    public static function userAccessTtl(): int
+    {
+        return (int) (env('USER_JWT_TTL') ?: 7200);
+    }
+
+    /**
+     * C 端用户 Refresh Token 有效期（秒）
+     */
+    public static function userRefreshTtl(): int
+    {
+        return (int) (env('USER_JWT_REFRESH_TTL') ?: 604800);
     }
 
     protected static function base64UrlEncode(string $data): string

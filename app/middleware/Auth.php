@@ -36,6 +36,16 @@ class Auth
             return json(['code' => 401, 'msg' => '登录令牌无效或已过期', 'data' => null], 401);
         }
 
+        // 角色必须是后台管理员：C 端用户令牌（role=user）在这里一律拒绝
+        if (Jwt::roleOf($payload) !== Jwt::ROLE_ADMIN) {
+            return json(['code' => 401, 'msg' => '令牌类型不匹配，请使用管理员登录令牌', 'data' => null], 401);
+        }
+
+        // Refresh Token 只能用来换新令牌，不能直接访问业务接口
+        if (Jwt::typeOf($payload) !== Jwt::TYPE_ACCESS) {
+            return json(['code' => 401, 'msg' => '令牌类型不匹配，请使用 Access Token', 'data' => null], 401);
+        }
+
         $admin = Admin::where('id', (int) $payload['id'])
             ->where('status', Admin::STATUS_ENABLE)
             ->find();

@@ -13,6 +13,66 @@ export const dashboardApi = {
   index: () => request.get('/dashboard'),
 };
 
+/** 开放平台（应用管理，M3.1） */
+export const openAppApi = {
+  list: (params) => request.get('/open-app', { params }),
+  detail: (id) => request.get(`/open-app/${id}`),
+  create: (data) => request.post('/open-app', data),
+  update: (id, data) => request.put(`/open-app/${id}`, data),
+  setStatus: (id, status) => request.put(`/open-app/${id}/status`, { status }),
+  rotate: (id) => request.post(`/open-app/${id}/rotate`),
+};
+
+/** C 端用户管理（M3.7） */
+export const userManageApi = {
+  list: (params) => request.get('/user-manage', { params }),
+  create: (data) => request.post('/user-manage', data),
+  detail: (id) => request.get(`/user-manage/${id}`),
+  update: (id, data) => request.put(`/user-manage/${id}`, data),
+  setStatus: (id, status) => request.put(`/user-manage/${id}/status`, { status }),
+  resetPassword: (id) => request.post(`/user-manage/${id}/reset-password`),
+  points: (id, data) => request.post(`/user-manage/${id}/points`, data),
+  exp: (id, data) => request.post(`/user-manage/${id}/exp`, data),
+  restore: (id) => request.post(`/user-manage/${id}/restore`),
+};
+
+/** 等级规则（M3.7） */
+export const levelApi = {
+  list: () => request.get('/level'),
+  create: (data) => request.post('/level', data),
+  update: (id, data) => request.put(`/level/${id}`, data),
+  recalculate: () => request.post('/level/recalculate'),
+};
+
+/** 评论审核与配置（M3.7） */
+export const commentAuditApi = {
+  list: (params) => request.get('/comment-audit', { params }),
+  audit: (id, result, note) => request.put(`/comment-audit/${id}/audit`, { result, handle_result: note }),
+  remove: (id) => request.delete(`/comment-audit/${id}`),
+  config: () => request.get('/comment-audit/config'),
+  saveConfig: (data) => request.put('/comment-audit/config', data),
+};
+
+/** 敏感词库（M3.7） */
+export const sensitiveApi = {
+  list: (params) => request.get('/sensitive-word', { params }),
+  create: (data) => request.post('/sensitive-word', data),
+  remove: (id) => request.delete(`/sensitive-word/${id}`),
+};
+
+/** 举报处理（M3.7） */
+export const reportApi = {
+  list: (params) => request.get('/report', { params }),
+  handle: (id, data) => request.put(`/report/${id}/handle`, data),
+};
+
+/** 积分规则与统计（M3.7） */
+export const pointConfigApi = {
+  rules: () => request.get('/points/rule'),
+  saveRules: (data) => request.post('/points/rule', data),
+  stat: () => request.get('/points/stat'),
+};
+
 /** 内容管理 */
 export const contentApi = {
   list: (params) => request.get('/content', { params }),
