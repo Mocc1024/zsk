@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Button,
   Card,
@@ -40,8 +40,20 @@ const FRONT_BASE = import.meta.env.VITE_FRONT_BASE || '';
 /** 前台只对外展示「已发布」的内容（ContentReader 按 status=1 过滤） */
 const frontUrl = (id) => `${FRONT_BASE}/content/${id}`;
 
+/** 从 URL 读状态筛选值：看板「草稿内容」跳转过来时带 ?status=0 */
+const readUrlStatus = (params) => {
+  const raw = params.get('status');
+  if (raw === null || raw === '') {
+    return undefined;
+  }
+  const status = Number(raw);
+
+  return Number.isNaN(status) ? undefined : status;
+};
+
 export default function ContentList() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { hasPermission } = useAuth();
   const [form] = Form.useForm();
   const [list, setList] = useState([]);
@@ -50,7 +62,10 @@ export default function ContentList() {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [query, setQuery] = useState({ page: 1, limit: 10 });
+  // 首屏就带上 URL 上的状态筛选。若挪到 useEffect 里补，
+  // 会先按「未筛选」请求一次、再按筛选请求一次，页面闪一下全部列表才变成草稿。
+  const urlStatus = readUrlStatus(searchParams);
+  const [query, setQuery] = useState({ page: 1, limit: 10, status: urlStatus });
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -66,6 +81,27 @@ export default function ContentList() {
   useEffect(() => {
     fetchList();
   }, [fetchList]);
+
+  // 参数只是一次性的「跳转意图」，用完后从 URL 上摘掉。
+  // 留着的话，用户手动改成别的筛选再刷新，URL 又会把筛选项拽回草稿，很难解释。
+  //
+  // 这里不能再无条件 setQuery：初值已经在 useState / initialValues 里带上，
+  // 值相同时下面这一行会原样返回 prev，React 跳过更新，也就不会有第二次请求。
+  useEffect(() => {
+    const status = readUrlStatus(searchParams);
+    if (status === undefined) {
+      return;
+    }
+
+    setQuery((prev) =>
+      prev.status === status && prev.page === 1 ? prev : { ...prev, page: 1, status }
+    );
+    form.setFieldsValue({ status });
+
+    const next = new URLSearchParams(searchParams);
+    next.delete('status');
+    setSearchParams(next, { replace: true });
+  }, [searchParams]);
 
   useEffect(() => {
     categoryApi.options().then((res) => setCategories(res.data || []));
@@ -304,7 +340,13 @@ export default function ContentList() {
       </Typography.Title>
 
       <Card bordered={false} style={{ marginBottom: 16 }}>
-        <Form form={form} layout="inline" onFinish={handleSearch} style={{ rowGap: 12 }}>
+        <Form
+          form={form}
+          layout="inline"
+          onFinish={handleSearch}
+          initialValues={{ status: urlStatus }}
+          style={{ rowGap: 12 }}
+        >
           <Form.Item name="keyword">
             <Input allowClear prefix={<SearchOutlined />} placeholder="标题 / 作者 / 摘要" style={{ width: 200 }} />
           </Form.Item>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Alert,
   Button,
@@ -29,6 +30,13 @@ import { useAuth } from '../store/AuthContext';
 export default function InteractManage() {
   const { hasPermission } = useAuth();
 
+  // 页签写进 URL：看板的「待审评论 / 待处理举报」要能一点直达对应页签，
+  // 而不是落地后再自己找。用 defaultActiveKey 做不到，必须受控。
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validKeys = ['comment', 'report', 'config', 'sensitive', 'points', 'stat'];
+  const rawTab = searchParams.get('tab') || '';
+  const activeKey = validKeys.includes(rawTab) ? rawTab : 'comment';
+
   const items = [
     { key: 'comment', label: '评论审核', children: <CommentAudit /> },
     { key: 'report', label: '举报处理', children: <ReportHandle /> },
@@ -40,7 +48,11 @@ export default function InteractManage() {
 
   return (
     <Card>
-      <Tabs defaultActiveKey="comment" items={items} />
+      <Tabs
+        activeKey={activeKey}
+        onChange={(key) => setSearchParams({ tab: key })}
+        items={items}
+      />
     </Card>
   );
 }

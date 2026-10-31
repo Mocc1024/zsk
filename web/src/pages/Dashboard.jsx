@@ -1,40 +1,63 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Card, Col, Empty, Row, Spin, Table, Tag, Typography } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import { Card, Col, Empty, Row, Space, Spin, Table, Tag, Tooltip, Typography } from 'antd';
 import {
-  EditOutlined,
   EyeOutlined,
   FileTextOutlined,
-  FolderOutlined,
+  FlagOutlined,
+  LikeOutlined,
+  MessageOutlined,
   RiseOutlined,
+  StarOutlined,
   TeamOutlined,
+  UserAddOutlined,
 } from '@ant-design/icons';
 import EChart from '../components/EChart';
 import { dashboardApi } from '../api';
+import { useAuth } from '../store/AuthContext';
 import { contentStatusColor, contentStatusLabel } from '../utils/constants';
 
 const cardIcons = {
   content: <FileTextOutlined />,
   published: <RiseOutlined />,
-  draft: <EditOutlined />,
   views: <EyeOutlined />,
-  today: <EditOutlined />,
-  month: <EditOutlined />,
-  category: <FolderOutlined />,
-  admin: <TeamOutlined />,
+  users: <TeamOutlined />,
+  todayUser: <UserAddOutlined />,
+  comments: <MessageOutlined />,
+  favorites: <StarOutlined />,
+  likes: <LikeOutlined />,
 };
 
 const cardColors = {
   content: '#2f54eb',
   published: '#52c41a',
-  draft: '#faad14',
   views: '#13c2c2',
-  today: '#722ed1',
-  month: '#eb2f96',
-  category: '#fa8c16',
-  admin: '#2db7f5',
+  users: '#722ed1',
+  todayUser: '#eb2f96',
+  comments: '#fa8c16',
+  favorites: '#faad14',
+  likes: '#f5222d',
+};
+
+const todoIcons = {
+  comment_pending: <MessageOutlined />,
+  report_pending: <FlagOutlined />,
+  draft: <FileTextOutlined />,
+};
+
+/**
+ * 待办条目需要的权限：没有对应权限就不给跳转，
+ * 免得点进去被后端 403 弹回来
+ */
+const todoPermission = {
+  comment_pending: 'comment.audit',
+  report_pending: 'report.list',
+  draft: null,
 };
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { hasPermission } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,17 +72,26 @@ export default function Dashboard() {
     const trend = data?.trend || [];
     return {
       tooltip: { trigger: 'axis' },
-      grid: { left: 40, right: 20, top: 30, bottom: 30 },
+      legend: { data: ['内容新增', '用户新增'], top: 0 },
+      grid: { left: 40, right: 20, top: 40, bottom: 30 },
       xAxis: { type: 'category', data: trend.map((item) => item.label), boundaryGap: false },
       yAxis: { type: 'value', minInterval: 1 },
       series: [
         {
-          name: '新增内容',
+          name: '内容新增',
           type: 'line',
           smooth: true,
-          data: trend.map((item) => item.total),
+          data: trend.map((item) => item.content),
           areaStyle: { opacity: 0.18 },
           itemStyle: { color: '#2f54eb' },
+        },
+        {
+          name: '用户新增',
+          type: 'line',
+          smooth: true,
+          data: trend.map((item) => item.user),
+          areaStyle: { opacity: 0.15 },
+          itemStyle: { color: '#52c41a' },
         },
       ],
     };
@@ -101,6 +133,25 @@ export default function Dashboard() {
     };
   }, [data]);
 
+  const levelOption = useMemo(() => {
+    // 0 人的等级不进图：饼图会给每个 0 值扇区画标签，全叠在圆心没法看。
+    // 等级是随用户成长逐渐出现的，有人的等级自然会出现在图上。
+    const list = (data?.levelDistribution || []).filter((item) => item.value > 0);
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0, type: 'scroll' },
+      series: [
+        {
+          type: 'pie',
+          radius: ['40%', '68%'],
+          center: ['50%', '44%'],
+          data: list.map((item) => ({ name: item.name, value: item.value })),
+          label: { formatter: '{c}' },
+        },
+      ],
+    };
+  }, [data]);
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 120 }}>
@@ -109,35 +160,107 @@ export default function Dashboard() {
     );
   }
 
-  const cards = data?.cards || [];
+  const todo = data?.todo || [];
+  const groups = data?.groups || [];
 
   return (
     <div>
-      <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 16 }}>
+      <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 4 }}>
         数据看板
       </Typography.Title>
+      <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+        先看有什么要处理，再看站点整体状况
+      </Typography.Text>
 
+      {/* ========== 待处理 ========== */}
       <Row gutter={[16, 16]}>
-        {cards.map((item) => (
-          <Col key={item.key} xs={24} sm={12} md={8} xl={6}>
-            <Card className="stat-card" bordered={false}>
-              <div className="stat-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ color: cardColors[item.key] || '#2f54eb' }}>{cardIcons[item.key]}</span>
-                {item.title}
-              </div>
-              <div className="stat-value" style={{ color: cardColors[item.key] || '#2f54eb' }}>
-                {item.value}
-                <span style={{ fontSize: 13, color: '#8c8c8c', marginLeft: 4 }}>{item.suffix}</span>
-              </div>
-              <div className="stat-desc">{item.desc}</div>
+        {todo.map((item) => {
+          const perm = todoPermission[item.key];
+          const canGo = perm ? hasPermission(perm) : true;
+          const pending = Number(item.value) > 0;
+
+          return (
+            <Col key={item.key} xs={24} sm={8}>
+              <Card
+                bordered={false}
+                hoverable={canGo}
+                onClick={canGo ? () => navigate(item.link) : undefined}
+                style={{
+                  cursor: canGo ? 'pointer' : 'default',
+                  borderLeft: `3px solid ${pending ? '#faad14' : '#d9d9d9'}`,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: pending ? '#d46b08' : '#8c8c8c' }}>
+                  {todoIcons[item.key]}
+                  <span>{item.title}</span>
+                  {pending ? <Tag color="orange">待处理</Tag> : null}
+                </div>
+                <div
+                  className="stat-value"
+                  style={{ color: pending ? '#d46b08' : '#595959', margin: '6px 0' }}
+                >
+                  {item.value}
+                  <span style={{ fontSize: 13, color: '#8c8c8c', marginLeft: 4 }}>项</span>
+                </div>
+                <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+                  {canGo ? item.desc : '无处理权限'}
+                </div>
+              </Card>
+            </Col>
+          );
+        })}
+      </Row>
+
+      {/* ========== 核心指标（内容 / 用户 / 互动）========== */}
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        {groups.map((group) => (
+          <Col key={group.key} xs={24} lg={8}>
+            <Card title={group.title} bordered={false} styles={{ body: { paddingTop: 12 } }}>
+              <Row gutter={[12, 12]}>
+                {group.items.map((item) => (
+                  <Col key={item.key} span={24 / group.items.length}>
+                    <div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          fontSize: 13,
+                          color: '#8c8c8c',
+                        }}
+                      >
+                        <span style={{ color: cardColors[item.key] || '#2f54eb' }}>
+                          {cardIcons[item.key]}
+                        </span>
+                        {item.title}
+                      </div>
+                      <div
+                        className="stat-value"
+                        style={{
+                          color: cardColors[item.key] || '#2f54eb',
+                          fontSize: 26,
+                          margin: '2px 0',
+                        }}
+                      >
+                        {Number(item.value).toLocaleString()}
+                        <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 3 }}>
+                          {item.suffix}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#bfbfbf' }}>{item.desc}</div>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
             </Card>
           </Col>
         ))}
       </Row>
 
+      {/* ========== 趋势 + 状态分布 ========== */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={16}>
-          <Card title="近 14 天内容新增趋势" bordered={false}>
+          <Card title="近 14 天新增趋势" bordered={false}>
             {data?.trend?.length ? <EChart option={trendOption} height={300} /> : <Empty />}
           </Card>
         </Col>
@@ -148,13 +271,33 @@ export default function Dashboard() {
         </Col>
       </Row>
 
+      {/* ========== 分类分布 + 用户等级分布 ========== */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} lg={10}>
+        <Col xs={24} lg={12}>
           <Card title="分类内容分布" bordered={false}>
-            {data?.categoryDistribution?.length ? <EChart option={categoryOption} height={300} /> : <Empty />}
+            {data?.categoryDistribution?.length ? <EChart option={categoryOption} height={280} /> : <Empty />}
           </Card>
         </Col>
-        <Col xs={24} lg={14}>
+        <Col xs={24} lg={12}>
+          <Card
+            title="用户等级分布"
+            bordered={false}
+            extra={
+              <Tooltip title="等级只是成长标记，不影响功能权限">
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  仅作标记
+                </Typography.Text>
+              </Tooltip>
+            }
+          >
+            {data?.levelDistribution?.length ? <EChart option={levelOption} height={280} /> : <Empty />}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* ========== 明细 ========== */}
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24} lg={12}>
           <Card title="热门内容 TOP 8" bordered={false}>
             <Table
               size="small"
@@ -163,21 +306,18 @@ export default function Dashboard() {
               dataSource={data?.hotContents || []}
               columns={[
                 { title: '标题', dataIndex: 'title', ellipsis: true },
-                { title: '分类', dataIndex: 'category_name', width: 110, render: (v) => v || '未分类' },
+                { title: '分类', dataIndex: 'category_name', width: 100, render: (v) => v || '未分类' },
                 {
                   title: '状态',
                   dataIndex: 'status',
-                  width: 90,
+                  width: 84,
                   render: (v) => <Tag color={contentStatusColor(v)}>{contentStatusLabel(v)}</Tag>,
                 },
-                { title: '浏览量', dataIndex: 'views', width: 90, render: (v) => v?.toLocaleString() },
+                { title: '浏览量', dataIndex: 'views', width: 84, render: (v) => v?.toLocaleString() },
               ]}
             />
           </Card>
         </Col>
-      </Row>
-
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={12}>
           <Card title="最新内容" bordered={false}>
             <Table
@@ -188,7 +328,36 @@ export default function Dashboard() {
               columns={[
                 { title: '标题', dataIndex: 'title', ellipsis: true },
                 { title: '作者', dataIndex: 'author', width: 90 },
-                { title: '创建时间', dataIndex: 'create_time', width: 160 },
+                { title: '创建时间', dataIndex: 'create_time', width: 150 },
+              ]}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24} lg={12}>
+          <Card title="最新注册用户" bordered={false}>
+            <Table
+              size="small"
+              rowKey="id"
+              pagination={false}
+              locale={{ emptyText: <Empty description="还没有用户注册" /> }}
+              dataSource={data?.latestUsers || []}
+              columns={[
+                {
+                  title: '用户',
+                  dataIndex: 'nickname',
+                  ellipsis: true,
+                  render: (v, record) => v || record.username,
+                },
+                {
+                  title: '等级',
+                  dataIndex: 'level',
+                  width: 80,
+                  render: (v) => <Tag color="blue">Lv{v ?? 1}</Tag>,
+                },
+                { title: '注册时间', dataIndex: 'create_time', width: 150 },
               ]}
             />
           </Card>
@@ -201,14 +370,22 @@ export default function Dashboard() {
               pagination={false}
               dataSource={data?.latestLogs || []}
               columns={[
-                { title: '操作人', dataIndex: 'admin_name', width: 100 },
+                { title: '操作人', dataIndex: 'admin_name', width: 90 },
                 { title: '操作', dataIndex: 'description', ellipsis: true },
-                { title: '时间', dataIndex: 'create_time', width: 160 },
+                { title: '时间', dataIndex: 'create_time', width: 150 },
               ]}
             />
           </Card>
         </Col>
       </Row>
+
+      <div style={{ marginTop: 12, color: '#bfbfbf', fontSize: 12 }}>
+        <Space size={16}>
+          <span>分类 {data?.meta?.category ?? 0} 个</span>
+          <span>管理员 {data?.meta?.admin ?? 0} 人</span>
+          <span>已下架 {data?.meta?.offline ?? 0} 条</span>
+        </Space>
+      </div>
     </div>
   );
 }
