@@ -11,6 +11,7 @@ import {
   Switch,
   Table,
   Tag,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
@@ -132,27 +133,48 @@ export default function CategoryList() {
               key: 'action',
               width: 200,
               fixed: 'right',
-              render: (_, record) => (
-                <Space size={4}>
-                  {hasPermission('category.update') && (
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
-                      编辑
-                    </Button>
-                  )}
-                  {hasPermission('category.status') && (
-                    <Button type="link" size="small" onClick={() => handleStatus(record)}>
-                      {record.status === 1 ? '禁用' : '启用'}
-                    </Button>
-                  )}
-                  {hasPermission('category.delete') && (
-                    <Popconfirm title="确认删除该分类？" onConfirm={() => handleDelete(record.id)}>
-                      <Button type="link" size="small" danger>
-                        删除
+              render: (_, record) => {
+                // 有内容的分类不允许删除：按钮直接禁用并说明原因，
+                // 免得用户点完才被后端驳回（后端 delete 同样会拦截，此处是前置兜底）
+                const used = Number(record.content_count) || 0;
+
+                return (
+                  <Space size={4}>
+                    {hasPermission('category.update') && (
+                      <Button
+                        type="link"
+                        size="small"
+                        icon={<EditOutlined />}
+                        onClick={() => openEdit(record)}
+                      >
+                        编辑
                       </Button>
-                    </Popconfirm>
-                  )}
-                </Space>
-              ),
+                    )}
+                    {hasPermission('category.status') && (
+                      <Button type="link" size="small" onClick={() => handleStatus(record)}>
+                        {record.status === 1 ? '禁用' : '启用'}
+                      </Button>
+                    )}
+                    {hasPermission('category.delete') &&
+                      (used > 0 ? (
+                        <Tooltip title={`该分类下还有 ${used} 条内容，请先移走或删除后再删除该分类`}>
+                          <Button type="link" size="small" danger disabled>
+                            删除
+                          </Button>
+                        </Tooltip>
+                      ) : (
+                        <Popconfirm
+                          title="确认删除该分类？"
+                          onConfirm={() => handleDelete(record.id)}
+                        >
+                          <Button type="link" size="small" danger>
+                            删除
+                          </Button>
+                        </Popconfirm>
+                      ))}
+                  </Space>
+                );
+              },
             },
           ]}
         />

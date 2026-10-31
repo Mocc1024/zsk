@@ -74,7 +74,9 @@ export const tagApi = {
 /** 分类管理 */
 export const categoryApi = {
   list: (params) => request.get('/category', { params }),
-  options: () => request.get('/category/options'),
+  // params 可选：传 { include_disabled: 1 } 时连同禁用分类一起返回（编辑内容用），
+  // 不传则保持原行为——只返回启用分类（列表筛选用）
+  options: (params) => request.get('/category/options', { params }),
   detail: (id) => request.get(`/category/${id}`),
   create: (data) => request.post('/category', data),
   update: (id, data) => request.put(`/category/${id}`, data),

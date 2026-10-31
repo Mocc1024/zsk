@@ -196,13 +196,18 @@ class ContentController extends BaseController
         $this->checkFieldChange($data, $old, 'is_top', 'content.top', '置顶状态');
 
         $tagNames = $this->tagNames($data);
-        $payload  = $this->buildPayload($data);
+        $payload  = $this->buildPayload($data, $old);
         $payload['update_time'] = date('Y-m-d H:i:s');
         $row->save($payload);
 
         // 关联同步：标签、附件引用
         $current = array_merge($old, $payload);
-        TagService::syncForContent($id, $tagNames);
+        // 只在调用方显式传入 tags 时同步，与 publish_time 保持同一口径：
+        // 未传的字段保持原值，避免只改状态 / 发布时间这类局部更新把标签静默清空。
+        // 传空数组表示「清空全部标签」，仍会照常清空。
+        if (array_key_exists('tags', $data)) {
+            TagService::syncForContent($id, $tagNames);
+        }
         AttachmentService::syncForContent($id, (string) ($current['content'] ?? ''), (string) ($current['cover'] ?? ''));
 
         $this->log('content', 'update', '编辑内容：' . ($payload['title'] ?? $row->getAttr('title')));
@@ -261,13 +266,16 @@ class ContentController extends BaseController
         unset($data['status'], $data['is_top']);
 
         $tagNames = $this->tagNames($data);
-        $payload  = $this->buildPayload($data);
+        $payload  = $this->buildPayload($data, $old);
         unset($payload['status'], $payload['is_top']);
         $payload['update_time'] = date('Y-m-d H:i:s');
         $row->save($payload);
 
         $current = array_merge($old, $payload);
-        TagService::syncForContent($id, $tagNames);
+        // 与 update() 同口径：只有显式传了 tags 才同步，避免自动保存顺带清空标签
+        if (array_key_exists('tags', $data)) {
+            TagService::syncForContent($id, $tagNames);
+        }
         AttachmentService::syncForContent($id, (string) ($current['content'] ?? ''), (string) ($current['cover'] ?? ''));
 
         return $this->success(['id' => $id, 'saved_at' => date('H:i:s')], '已自动保存');
@@ -704,8 +712,12 @@ class ContentController extends BaseController
 
     /**
      * 构建写入数据
+     *
+     * @param array      $data 提交数据
+     * @param array|null $old  更新前的记录；用于判断「发布时间原本是否已有」。
+     *                         传 null 表示新建。
      */
-    protected function buildPayload(array $data): array
+    protected function buildPayload(array $data, ?array $old = null): array
     {
         $payload = [];
         foreach ($this->editableFields() as $field) {
@@ -727,14 +739,24 @@ class ContentController extends BaseController
             $payload[$field] = $value;
         }
 
-        // 发布状态自动补充发布时间
-        if (($payload['status'] ?? null) === Content::STATUS_PUBLISHED && empty($payload['publish_time'])) {
-            $payload['publish_time'] = date('Y-m-d H:i:s');
+        // 发布时间：只有调用方显式传了才处理。
+        // 不传时保持原值不动 —— 否则只改标签、只改状态这类局部更新，
+        // 会把已有的发布时间静默重置为当前时间或清空。
+        if (array_key_exists('publish_time', $data)) {
+            $payload['publish_time'] = empty($data['publish_time'])
+                ? null
+                : date('Y-m-d H:i:s', strtotime((string) $data['publish_time']));
         }
-        if (!empty($payload['publish_time'])) {
-            $payload['publish_time'] = date('Y-m-d H:i:s', strtotime((string) $payload['publish_time']));
-        } else {
-            $payload['publish_time'] = null;
+
+        // 发布状态却没有发布时间时补当前时间：
+        // 更新场景要尊重原有值（上面的分支已处理显式传值），
+        // 只有「原本就没有」才填充，避免覆盖既有发布时间
+        if (
+            ($payload['status'] ?? null) === Content::STATUS_PUBLISHED
+            && empty($payload['publish_time'])
+            && empty($old['publish_time'])
+        ) {
+            $payload['publish_time'] = date('Y-m-d H:i:s');
         }
 
         return $payload;

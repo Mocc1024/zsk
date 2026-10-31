@@ -51,7 +51,9 @@ export default function ContentEdit() {
   const [lastSaved, setLastSaved] = useState('');
 
   useEffect(() => {
-    categoryApi.options().then((res) => setCategories(res.data || []));
+    // 连同禁用分类一起取：内容当前所属的可能是禁用分类，
+    // 若下拉里没有该项会回显成空白。禁用项在下面置灰、不允许选择。
+    categoryApi.options({ include_disabled: 1 }).then((res) => setCategories(res.data || []));
   }, []);
 
   useEffect(() => {
@@ -217,7 +219,15 @@ export default function ContentEdit() {
               <Select
                 placeholder="请选择分类"
                 style={{ width: 240 }}
-                options={categories.map((item) => ({ label: item.name, value: item.id }))}
+                options={categories.map((item) => {
+                  const disabled = Number(item.status) !== 1;
+                  return {
+                    // 已选中的禁用分类仍会正常回显名称（antd 只对交互禁用，不影响回显）
+                    label: disabled ? `${item.name}（已禁用）` : item.name,
+                    value: item.id,
+                    disabled,
+                  };
+                })}
               />
             </Form.Item>
             <Form.Item name="author" label="作者">

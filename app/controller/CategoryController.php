@@ -58,15 +58,25 @@ class CategoryController extends BaseController
     }
 
     /**
-     * 下拉选项（全部启用分类）
+     * 下拉选项
+     *
+     * 默认只返回「启用」分类（供内容列表筛选用）。
+     *
+     * 编辑内容时传 include_disabled=1 取全部：禁用分类由前端置灰、不允许选择，
+     * 但必须出现在下拉里 —— 否则「内容当前所属的禁用分类」在 options 中找不到对应项，
+     * 下拉会回显成空白或裸 id，用户一保存就可能把分类改掉。
      */
     public function options()
     {
-        $list = Db::name('category')
-            ->whereNull('delete_time')
-            ->where('status', Category::STATUS_ENABLE)
-            ->order('sort', 'desc')
-            ->order('id', 'desc')
+        $params = $this->params();
+        $includeDisabled = (int) ($params['include_disabled'] ?? 0) === 1;
+
+        $query = Db::name('category')->whereNull('delete_time');
+        if (!$includeDisabled) {
+            $query->where('status', Category::STATUS_ENABLE);
+        }
+
+        $list = $query->order('sort', 'desc')->order('id', 'desc')
             ->select()
             ->toArray();
 
@@ -167,7 +177,8 @@ class CategoryController extends BaseController
 
         $used = (int) Db::name('content')->where('category_id', $id)->whereNull('delete_time')->count();
         if ($used > 0) {
-            return $this->fail('该分类下还有 ' . $used . ' 条内容，无法删除');
+            // 文案与前端禁用按钮的 Tooltip 保持一致，避免两处说法不一
+            return $this->fail('该分类下还有 ' . $used . ' 条内容，请先移走或删除后再删除该分类');
         }
 
         $row->save(['delete_time' => date('Y-m-d H:i:s')]);
