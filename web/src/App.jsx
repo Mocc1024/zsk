@@ -22,6 +22,8 @@ const LogList = lazy(() => import('./pages/LogList'));
 const OpenAppList = lazy(() => import('./pages/OpenAppList'));
 const UserManageList = lazy(() => import('./pages/UserManageList'));
 const InteractManage = lazy(() => import('./pages/InteractManage'));
+const Security = lazy(() => import('./pages/Security'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 /** 懒加载页面的统一加载态 */
 function PageLoading() {
@@ -78,6 +80,8 @@ function AppRoutes() {
         {/* 路径与后台菜单的 path 一致：用户管理 path = /user，互动管理 path = /interact */}
         <Route path="user" element={<UserManageList />} />
         <Route path="interact" element={<InteractManage />} />
+        <Route path="security" element={<Security />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

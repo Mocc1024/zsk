@@ -19,7 +19,9 @@ class Admin extends Model
 
     protected $name = 'admin';
 
-    protected $hidden = ['password', 'delete_time'];
+    // totp_secret / totp_recovery 绝不能出现在任何返回给前端的 profile 里：
+    // 前者是二次验证的根密钥，泄漏就等于二次验证失效；后者是恢复码散列。
+    protected $hidden = ['password', 'delete_time', 'totp_secret', 'totp_recovery'];
 
     protected $append = ['status_text', 'group_title', 'group_names'];
 

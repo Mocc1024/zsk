@@ -228,9 +228,7 @@ export default function BasicLayout() {
               <Link to="/">首页</Link>
               <Link to="/search">搜索</Link>
               <Link to="/favorites">我的收藏</Link>
-              <a href="/admin/" target="_blank" rel="noreferrer">
-                管理后台
-              </a>
+            {/* 不再放后台入口：前台是对外站点，/admin 的地址不该出现在公开页面上 */}
             </div>
           </div>
           <div className="footer-copy">© {new Date().getFullYear()} ZSK 知识库 · 内容仅供研究参考</div>

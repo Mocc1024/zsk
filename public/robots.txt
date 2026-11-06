@@ -3,7 +3,8 @@
 
 User-agent: *
 Allow: /
-Disallow: /admin
 Disallow: /api/
+# 后台路径不在这里列出：robots.txt 是公开文件，写出来等于告诉别人后台在哪。
+# 后台页面用页面内的 <meta name="robots" content="noindex,nofollow"> 阻止收录。
 
 Sitemap: /sitemap.xml

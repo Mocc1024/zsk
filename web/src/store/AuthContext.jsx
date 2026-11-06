@@ -44,6 +44,17 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  /**
+   * 重新拉取个人信息并刷新本地缓存。
+   * 改完昵称要立刻反映到顶栏和头像上，所以个人中心保存后必须调一次。
+   */
+  const refresh = useCallback(async () => {
+    const res = await authApi.profile();
+    localStorage.setItem('zsk_admin', JSON.stringify(res.data.admin));
+    setAdmin(res.data.admin);
+    return res.data.admin;
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('zsk_token');
     localStorage.removeItem('zsk_admin');
@@ -98,8 +109,9 @@ export function AuthProvider({ children }) {
       hasPermission,
       setSession,
       logout,
+      refresh,
     }),
-    [admin, token, loading, permissions, menus, hasPermission, setSession, logout]
+    [admin, token, loading, permissions, menus, hasPermission, setSession, logout, refresh]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

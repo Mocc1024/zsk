@@ -13,12 +13,23 @@ Route::get('/', function () {
 Route::group('api', function () {
     // ---- 登录认证 ----
     Route::post('auth/login', '\app\controller\AuthController@login');
+    // 两步验证第二步：凭登录时拿到的一次性票据 + 6 位码换正式令牌。
+    // 必须免鉴权——此刻用户还没有令牌。
+    Route::post('auth/totp/login', '\app\controller\AuthController@totpLogin');
 
     // ---- 需要登录令牌 ----
     Route::group(function () {
         Route::get('auth/profile', '\app\controller\AuthController@profile');
         Route::post('auth/logout', '\app\controller\AuthController@logout');
         Route::post('auth/password', '\app\controller\AuthController@password');
+        // 修改个人资料（昵称 / 邮箱 / 头像）：同样是「对自己」的操作
+        Route::put('auth/profile', '\app\controller\AuthController@updateProfile');
+
+        // 两步验证（TOTP）管理：都是「对自己」的操作，登录后即可访问
+        Route::get('auth/totp/status', '\app\controller\AuthController@totpStatus');
+        Route::post('auth/totp/setup', '\app\controller\AuthController@totpSetup');
+        Route::post('auth/totp/enable', '\app\controller\AuthController@totpEnable');
+        Route::post('auth/totp/disable', '\app\controller\AuthController@totpDisable');
 
         // 数据看板
         Route::get('dashboard', '\app\controller\DashboardController@index');

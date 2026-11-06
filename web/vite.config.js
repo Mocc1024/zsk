@@ -6,10 +6,12 @@ const API_TARGET = 'http://127.0.0.1:8000';
 
 export default defineConfig({
   plugins: [react()],
-  // 线上部署在 www.zsk.com/admin/
-  base: '/admin/',
+  // 线上部署在 www.zsk.com/zsk-cms-7c4e/
+  // 不用 /admin：扫描器的字典里 admin 排在最前面，改个名字能挡掉绝大多数无差别扫描。
+  // 注意这只是减少噪音，真正的门在登录认证与权限，不靠路径保密。
+  base: '/zsk-cms-7c4e/',
   build: {
-    outDir: '../public/admin',
+    outDir: '../public/zsk-cms-7c4e',
     emptyOutDir: true,
     chunkSizeWarningLimit: 1500,
   },

@@ -22,6 +22,14 @@ use think\facade\Db;
 class DashboardController extends BaseController
 {
     /**
+     * 明细列表统一条数
+     *
+     * 前端卡片标题会写这个数字（「热门内容 TOP 10」），做成常量是为了改的时候
+     * 不用去四个查询里挨个改，也避免标题写 10、实际只返回 8 条这种对不上。
+     */
+    private const DETAIL_LIMIT = 10;
+
+    /**
      * 评论待审状态
      *
      * 与 CommentController::STATUS_PENDING 同义，但那边是 private 且状态常量
@@ -198,7 +206,7 @@ class DashboardController extends BaseController
             ->join('category cat', 'c.category_id = cat.id', 'LEFT')
             ->whereNull('c.delete_time')
             ->order('c.views', 'desc')
-            ->limit(8)
+            ->limit(self::DETAIL_LIMIT)
             ->select()
             ->toArray();
 
@@ -208,7 +216,7 @@ class DashboardController extends BaseController
             ->join('category cat', 'c.category_id = cat.id', 'LEFT')
             ->whereNull('c.delete_time')
             ->order('c.id', 'desc')
-            ->limit(6)
+            ->limit(self::DETAIL_LIMIT)
             ->select()
             ->toArray();
 
@@ -216,11 +224,11 @@ class DashboardController extends BaseController
             ->field('id, username, nickname, level, create_time')
             ->whereNull('delete_time')
             ->order('id', 'desc')
-            ->limit(6)
+            ->limit(self::DETAIL_LIMIT)
             ->select()
             ->toArray();
 
-        $latestLogs = OperationLog::order('id', 'desc')->limit(8)->select()->toArray();
+        $latestLogs = OperationLog::order('id', 'desc')->limit(self::DETAIL_LIMIT)->select()->toArray();
 
         return $this->success([
             'todo'                 => $todo,

@@ -3,9 +3,19 @@ import request from './request';
 /** 认证 */
 export const authApi = {
   login: (data) => request.post('/auth/login', data),
+  // 两步验证第二步：凭 login 返回的一次性 ticket + 6 位动态码换正式令牌
+  totpLogin: (data) => request.post('/auth/totp/login', data),
   profile: () => request.get('/auth/profile'),
+  // 修改个人资料（昵称 / 邮箱 / 头像）
+  updateProfile: (data) => request.put('/auth/profile', data),
   logout: () => request.post('/auth/logout'),
   password: (data) => request.post('/auth/password', data),
+
+  // 两步验证（TOTP）管理
+  totpStatus: () => request.get('/auth/totp/status'),
+  totpSetup: () => request.post('/auth/totp/setup'),
+  totpEnable: (data) => request.post('/auth/totp/enable', data),
+  totpDisable: (data) => request.post('/auth/totp/disable', data),
 };
 
 /** 数据看板 */

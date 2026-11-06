@@ -14,7 +14,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { EditOutlined, PlusOutlined } from '@ant-design/icons';
+import { EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { adminApi, groupApi } from '../api';
 import { useAuth } from '../store/AuthContext';
 
@@ -24,6 +24,9 @@ const BUILTIN_SUPER_ADMIN_ID = 1;
 export default function AdminList() {
   const { hasPermission } = useAuth();
   const [form] = Form.useForm();
+  // 搜索表单单独一个实例：新增/编辑弹窗用的是 form，两者不能共用，
+  // 否则打开弹窗会把搜索条件带进去、重置搜索也会清空编辑中的字段
+  const [searchForm] = Form.useForm();
   const [list, setList] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -49,6 +52,22 @@ export default function AdminList() {
   useEffect(() => {
     fetchList();
   }, [fetchList]);
+
+  // 搜索：清空条件用 undefined 而不是空串，避免把 status='' 之类的值传给后端
+  const handleSearch = (values) => {
+    setQuery((prev) => ({
+      ...prev,
+      page: 1,
+      keyword: values.keyword || undefined,
+      group_id: values.group_id,
+      status: values.status,
+    }));
+  };
+
+  const handleReset = () => {
+    searchForm.resetFields();
+    setQuery({ page: 1, limit: query.limit });
+  };
 
   useEffect(() => {
     groupApi.options().then((res) => setGroups(res.data || []));
@@ -122,6 +141,46 @@ export default function AdminList() {
         )}
       </div>
 
+      <Card bordered={false} style={{ marginBottom: 16 }}>
+        <Form form={searchForm} layout="inline" onFinish={handleSearch} style={{ rowGap: 12 }}>
+          <Form.Item name="keyword">
+            <Input
+              allowClear
+              prefix={<SearchOutlined />}
+              placeholder="账号 / 昵称 / 邮箱"
+              style={{ width: 220 }}
+            />
+          </Form.Item>
+          <Form.Item name="group_id">
+            <Select
+              allowClear
+              placeholder="全部用户组"
+              style={{ width: 170 }}
+              options={groups}
+            />
+          </Form.Item>
+          <Form.Item name="status">
+            <Select
+              allowClear
+              placeholder="全部状态"
+              style={{ width: 130 }}
+              options={[
+                { label: '启用', value: 1 },
+                { label: '禁用', value: 0 },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                查询
+              </Button>
+              <Button onClick={handleReset}>重置</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+
       <Card bordered={false}>
         <Table
           rowKey="id"
@@ -133,7 +192,9 @@ export default function AdminList() {
             pageSize: query.limit,
             total,
             showTotal: (t) => `共 ${t} 条`,
-            onChange: (page, limit) => setQuery({ page, limit }),
+            // 翻页要保留搜索条件：这里若直接 setQuery({page, limit})，
+            // 翻到第二页时搜索条件就被清掉了，看起来像"搜索失效"
+            onChange: (page, limit) => setQuery((prev) => ({ ...prev, page, limit })),
           }}
           columns={[
             { title: 'ID', dataIndex: 'id', width: 70 },

@@ -28,6 +28,15 @@ const cardIcons = {
   likes: <LikeOutlined />,
 };
 
+// 明细卡 body 的最小高度。四张卡是 2×2 并排的，某一格数据不满就会比旁边矮一截，
+// 给个下限让它们始终齐平 —— 数据不满时是留白，不是错位。
+// 477 = body 内边距 48 + 表头 39 + 10 行 × 39（size="small" 行高），
+// 是 antd 默认间距下的实测值；换主题、改行高后要重新量。
+//
+// 用 minHeight 而不是 height：写死 height 的话，内容一旦超高就只能靠滚动条或裁剪来收场，
+// 那两样都比「偶尔高一点」难看。各文本列都开了 ellipsis，正常情况下就是 10 行整。
+const DETAIL_CARD_BODY_HEIGHT = 477;
+
 const cardColors = {
   content: '#2f54eb',
   published: '#52c41a',
@@ -298,7 +307,11 @@ export default function Dashboard() {
       {/* ========== 明细 ========== */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={12}>
-          <Card title="热门内容 TOP 8" bordered={false}>
+          <Card
+            title="热门内容 TOP 10"
+            bordered={false}
+            styles={{ body: { minHeight: DETAIL_CARD_BODY_HEIGHT } }}
+          >
             <Table
               size="small"
               rowKey="id"
@@ -319,7 +332,11 @@ export default function Dashboard() {
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="最新内容" bordered={false}>
+          <Card
+            title="最新内容"
+            bordered={false}
+            styles={{ body: { minHeight: DETAIL_CARD_BODY_HEIGHT } }}
+          >
             <Table
               size="small"
               rowKey="id"
@@ -337,7 +354,11 @@ export default function Dashboard() {
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={12}>
-          <Card title="最新注册用户" bordered={false}>
+          <Card
+            title="最新注册用户"
+            bordered={false}
+            styles={{ body: { minHeight: DETAIL_CARD_BODY_HEIGHT } }}
+          >
             <Table
               size="small"
               rowKey="id"
@@ -363,7 +384,11 @@ export default function Dashboard() {
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="最近操作日志" bordered={false}>
+          <Card
+            title="最近操作日志"
+            bordered={false}
+            styles={{ body: { minHeight: DETAIL_CARD_BODY_HEIGHT } }}
+          >
             <Table
               size="small"
               rowKey="id"

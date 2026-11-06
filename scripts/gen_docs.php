@@ -306,8 +306,8 @@ usort($order, static function (string $a, string $b) use ($priorities): int {
 $api = <<<MD
 # 接口文档
 
-> 本文件的「接口清单」由 `php scripts/gen_docs.php` **自动生成**（源：`route/app.php` + `config/auth_route.php`），
-> 第二章「通用约定」与第三章「核心接口示例」为手工维护。生成时间：{$stamp}
+> 第一章「接口清单」由 `php scripts/gen_docs.php` **自动生成**（源：`route/app.php` + `config/auth_route.php`），
+> 第二章及之后为手工维护，源码在 `docs/snippets/api-notes.md`（写在那里才不会被生成覆盖）。生成时间：{$stamp}
 
 ## 一、接口清单
 
@@ -332,100 +332,15 @@ foreach ($order as $module) {
     }
 }
 
-$api .= <<<MD
+// 第二章起为手工维护内容，单独放在 docs/snippets/api-notes.md。
+// 早先这些章节写在本文件的 heredoc 里，虽然文档头部写着「手工维护」，
+// 实际每次生成都会全量重写，人工补充的说明（如两步验证流程）会被静默冲掉。
+$notesFile = $docs . '/snippets/api-notes.md';
+$api .= is_file($notesFile)
+    ? "\n" . trim(file_get_contents($notesFile)) . "\n"
+    : "\n> 缺少 docs/snippets/api-notes.md，第二、三、四章未生成\n";
 
-## 二、通用约定
 
-### 2.1 请求
-
-- 基础路径：`/api`（部署到 `www.zsk.com/admin/` 时由 Nginx 转发到 PHP）
-- 编码：`application/json`；上传接口用 `multipart/form-data`
-- 鉴权：除 `POST /api/auth/login` 外，全部接口需携带 `Authorization: Bearer <token>`
-- 令牌有效期 7200 秒，401 时前端会清令牌并跳转登录页
-
-### 2.2 响应
-
-统一信封：
-
-```json
-{ "code": 0, "msg": "操作成功", "data": {} }
-```
-
-- `code = 0` 成功；非 0 为业务失败，`msg` 是可直接展示给用户的中文提示
-- HTTP 状态码与 `code` 一致：`401` 未登录 / `403` 无权限 / `404` 资源不存在
-
-### 2.3 分页
-
-列表接口统一接受 `page`（默认 1）与 `limit`（默认 10，上限 200），返回：
-
-```json
-{ "code": 0, "data": { "list": [], "total": 0, "page": 1, "pageSize": 10 } }
-```
-
-### 2.4 常见错误码
-
-| code | 含义 | 常见场景 |
-| --- | --- | --- |
-| 0 | 成功 | — |
-| 1 | 业务失败 | 参数校验不通过、被引用无法删除等 |
-| 401 | 未登录/令牌失效 | 令牌过期、被篡改 |
-| 403 | 无权限 | 当前用户组未授权该权限点 |
-| 404 | 资源不存在 | ID 不存在或已软删除 |
-| 500 | 服务异常 | 代码缺陷，需查日志 |
-
-## 三、核心接口示例
-
-### 3.1 登录
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
-```
-
-返回 `data.token`、`data.admin`、`data.permissions`、`data.menus`。
-
-### 3.2 上传图片（编辑器 / 素材库共用）
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/upload/image \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@a.jpg" -F "folder=editor"
-```
-
-大小上限：图片 5MB / 视频 50MB / 附件 20MB（与前端 `UPLOAD_LIMITS` 一致，服务端二次校验）。
-`folder` 不存在时自动登记为素材分组。
-
-### 3.3 素材分组
-
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| GET | `/api/attachment/folders` | 分组列表（含每个分组的素材数量）与素材总数 |
-| POST | `/api/attachment/folders` | 新增分组（名称唯一，最长 30 字符） |
-| PUT | `/api/attachment/folders/:id` | 重命名 / 改排序，重命名会同步改写其下素材 |
-| DELETE | `/api/attachment/folders/:id` | 删除分组，其下素材统一移入 `default`（`default` 不可删） |
-| PUT | `/api/attachment/move` | 批量移动素材 `{ ids: [1,2], folder: "cover" }` |
-
-### 3.4 回收站
-
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| GET | `/api/content/trash` | 回收站列表 |
-| GET | `/api/content/trash/:id` | 回收站内容详情（只读预览，含正文与标签） |
-| POST | `/api/content/:id/restore` | 恢复（正文、标签全部保留） |
-| POST | `/api/content/:id/force-delete` | 彻底删除（连带标签关联） |
-
-> 内容版本（原 3.5 节的版本列表 / 详情 / 回滚）已于 2026.10.30 下线删除，
-> 接口与 `zsk_content_version` 表不再使用，清理脚本见 `database/upgrade_drop_content_version.sql`。
-
-## 四、回归脚本
-
-- `scripts/test_html_filter.php`：XSS 与样式净化回归（39 条用例，双引擎），退出码非 0 即失败
-- `scripts/run_sql.php <sql>`：执行迁移 SQL（Windows 无 mysql 客户端时使用）
-- `scripts/gen_docs.php`：重新生成本文档、数据库字典与权限清单
-- `scripts/measure_edit_efficiency.php`：编辑效率度量
-
-MD;
 
 file_put_contents($docs . '/接口文档.md', $api);
 echo '已生成 docs/接口文档.md（' . count($rows) . " 条接口）\n";
