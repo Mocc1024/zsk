@@ -1,12 +1,12 @@
 <?php
 use think\facade\Route;
 
-// 健康检查
+// 健康检查：只返回存活状态，不暴露版本号与框架信息
 Route::get('/', function () {
     return json([
         'code' => 0,
-        'msg'  => 'ZSK 内容管理后台 API 服务运行中',
-        'data' => ['version' => '1.0.0', 'framework' => 'ThinkPHP 8'],
+        'msg'  => 'ok',
+        'data' => ['status' => 'ok'],
     ]);
 });
 

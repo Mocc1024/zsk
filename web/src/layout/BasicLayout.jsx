@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../store/AuthContext';
 import { authApi } from '../api';
+import logoMark from '../assets/logo.svg';
 
 const { Header, Sider, Content } = Layout;
 
@@ -199,8 +200,8 @@ export default function BasicLayout() {
         width={216}
       >
         <div className="app-logo">
-          <AppstoreOutlined />
-          {!collapsed && <span>ZSK 管理后台</span>}
+          <img src={logoMark} alt="" className="app-logo-icon" />
+          {!collapsed && <span>MCYY 管理后台</span>}
         </div>
         <Menu
           theme="dark"

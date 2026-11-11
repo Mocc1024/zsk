@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- MCYY 品牌图标：靛蓝渐变底 + 圆头笔画 M，favicon 与侧栏 logo 同源 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f54eb"/>
+      <stop offset="1" stop-color="#5b8def"/>
+    </linearGradient>
+    <linearGradient id="mStroke" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dbe6ff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.22" cy="0.12" r="0.95">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.38"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+  <rect width="64" height="64" rx="15" fill="url(#glow)"/>
+  <path d="M17 47 V19 L32 37 L47 19 V47" fill="none" stroke="url(#mStroke)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

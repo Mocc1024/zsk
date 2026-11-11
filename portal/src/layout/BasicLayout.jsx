@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { frontApi } from '../api';
 import { useUserAuth } from '../store/UserAuthContext';
+import logoMark from '../assets/logo.svg';
 
 /** 主题：跟随系统，手动切换后记住选择 */
 function ThemeToggle() {
@@ -127,8 +128,8 @@ export default function BasicLayout() {
             </button>
 
             <Link to="/" className="brand">
-              <span className="brand-mark">Z</span>
-              <span>ZSK 知识库</span>
+              <img className="brand-mark" src={logoMark} alt="MCYY 知识库" />
+              <span>MCYY 知识库</span>
             </Link>
 
             <nav className="nav">{navLinks}</nav>
@@ -219,7 +220,7 @@ export default function BasicLayout() {
         <div className="container">
           <div className="footer-inner">
             <div>
-              <p className="footer-brand">ZSK 知识库</p>
+              <p className="footer-brand">MCYY 知识库</p>
               <p className="footer-desc">
                 聚焦人工智能、数字经济与产业转型的观察记录，用结构化内容把复杂问题讲清楚。
               </p>
@@ -232,16 +233,16 @@ export default function BasicLayout() {
             </div>
           </div>
           <div className="footer-copy">
-            © {new Date().getFullYear()} ZSK 知识库 · 内容仅供研究参考
+            © {new Date().getFullYear()} MCYY 知识库 · 内容仅供研究参考
             {/* ICP 备案号：大陆服务器托管属管局硬性要求，会不定期抽查。
-                上线前把占位符替换成备案通过后下发的真实备案号。 */}
+                通过公安备案后，在此处再追加公安备案号及 beian.gov.cn 链接。 */}
             <a
               href="https://beian.miit.gov.cn/"
               target="_blank"
               rel="noopener noreferrer"
               className="footer-icp"
             >
-              【ICP备案号占位，替换为真实备案号】
+              浙ICP备2026047213号-2
             </a>
           </div>
         </div>

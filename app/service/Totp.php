@@ -50,7 +50,7 @@ class Totp
      * 格式是各验证器约定的，issuer 会显示在 App 的账户列表里，
      * 用「应用名:账号」的 label 形式，避免用户在多套系统间分不清。
      */
-    public static function uri(string $account, string $secret, string $issuer = 'ZSK'): string
+    public static function uri(string $account, string $secret, string $issuer = 'MCYY'): string
     {
         return sprintf(
             'otpauth://totp/%s:%s?secret=%s&issuer=%s&algorithm=SHA1&digits=%d&period=%d',

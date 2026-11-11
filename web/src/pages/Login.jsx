@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Button, Form, Input, Typography, message } from 'antd';
+import { Button, Form, Input, Typography, message } from 'antd';
 import { ArrowLeftOutlined, LockOutlined, SafetyCertificateOutlined, UserOutlined } from '@ant-design/icons';
 import { authApi } from '../api';
 import { useAuth } from '../store/AuthContext';
@@ -64,10 +64,10 @@ export default function Login() {
     <div className="login-page" style={{ backgroundImage: `url(${bgImage})` }}>
       <div className="login-card">
         <Typography.Title level={3} className="login-title">
-          ZSK 内容管理后台
+          MCYY 内容管理后台
         </Typography.Title>
         <div className="login-subtitle">
-          {ticket ? `两步验证 · ${username}` : 'ThinkPHP 8 + React 前后端分离后台管理系统'}
+          {ticket ? `两步验证 · ${username}` : '请使用管理员账号登录'}
         </div>
 
         {ticket ? (
@@ -98,7 +98,7 @@ export default function Login() {
             </Button>
           </Form>
         ) : (
-          <Form size="large" onFinish={onFinish} initialValues={{ username: 'admin', password: 'admin123' }}>
+          <Form size="large" onFinish={onFinish}>
             <Form.Item name="username" rules={[{ required: true, message: '请输入登录账号' }]}>
               <Input prefix={<UserOutlined />} placeholder="登录账号" autoComplete="username" />
             </Form.Item>
@@ -113,19 +113,6 @@ export default function Login() {
           </Form>
         )}
 
-        {!ticket && (
-          <Alert
-            type="info"
-            showIcon
-            message="演示账号"
-            description={
-              <div style={{ fontSize: 12, lineHeight: 1.9 }}>
-                <div>超级管理员：admin / admin123（全部权限）</div>
-                <div>内容编辑：editor / editor123（内容 + 分类权限）</div>
-              </div>
-            }
-          />
-        )}
       </div>
     </div>
   );
