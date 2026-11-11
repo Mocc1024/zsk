@@ -231,7 +231,19 @@ export default function BasicLayout() {
             {/* 不再放后台入口：前台是对外站点，/admin 的地址不该出现在公开页面上 */}
             </div>
           </div>
-          <div className="footer-copy">© {new Date().getFullYear()} ZSK 知识库 · 内容仅供研究参考</div>
+          <div className="footer-copy">
+            © {new Date().getFullYear()} ZSK 知识库 · 内容仅供研究参考
+            {/* ICP 备案号：大陆服务器托管属管局硬性要求，会不定期抽查。
+                上线前把占位符替换成备案通过后下发的真实备案号。 */}
+            <a
+              href="https://beian.miit.gov.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-icp"
+            >
+              【ICP备案号占位，替换为真实备案号】
+            </a>
+          </div>
         </div>
       </footer>
     </div>

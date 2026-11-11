@@ -1878,6 +1878,19 @@ mark {
   font-size: 12.5px;
 }
 
+/* ICP 备案号：低调但可点，管局要求链接到工信部备案系统 */
+.footer-icp {
+  margin-left: 8px;
+  color: inherit;
+  opacity: 0.75;
+  text-decoration: none;
+}
+
+.footer-icp:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
 /* 404 */
 .notfound {
   text-align: center;
