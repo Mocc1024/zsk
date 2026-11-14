@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookmarkX, Inbox } from 'lucide-react';
+import { BookmarkX, BookOpen, Inbox } from 'lucide-react';
 import { favoriteApi } from '../api';
 
 /**
@@ -78,17 +78,18 @@ export default function Favorites() {
         <div className="card-grid">
           {list.map((item) => (
             <div key={item.id} className="post-card">
-              {item.cover ? (
-                <div className="post-cover">
+              {/* 封面区：无图也占位，分类角标固定右上角，与全站卡片一致 */}
+              <div className={`post-cover${item.cover ? '' : ' post-cover-empty'}`}>
+                {item.cover ? (
                   <img src={item.cover} alt={item.title || '内容封面'} loading="lazy" />
-                </div>
-              ) : null}
-              <div className="post-body">
+                ) : (
+                  <BookOpen size={38} className="post-cover-empty-icon" />
+                )}
                 {item.category_name ? (
-                  <span className="tag-chip" style={{ alignSelf: 'flex-start' }}>
-                    {item.category_name}
-                  </span>
+                  <span className="post-cover-tag">{item.category_name}</span>
                 ) : null}
+              </div>
+              <div className="post-body">
                 <h3 className="post-title">
                   <Link to={`/content/${item.content_id}`}>{item.title || '（内容已删除）'}</Link>
                 </h3>

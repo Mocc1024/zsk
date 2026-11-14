@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Compass, Inbox } from 'lucide-react';
+import { Compass, Inbox, Pin } from 'lucide-react';
 import ContentCard from '../components/ContentCard';
 import { frontApi } from '../api';
 
@@ -95,8 +95,10 @@ export default function Home() {
     );
   }
 
+  // 置顶布局：第 1 条做头条大图，2~4 条做右侧小卡，其余进入下方「置顶推荐」网格
   const [hero, ...restTop] = data.top;
   const sideTop = restTop.slice(0, 3);
+  const extraTop = restTop.slice(3);
 
   return (
     <>
@@ -136,6 +138,22 @@ export default function Home() {
               ))}
             </div>
           ) : null}
+        </section>
+      ) : null}
+
+      {extraTop.length ? (
+        <section className="section">
+          <div className="section-head">
+            <h2 className="section-title">置顶推荐</h2>
+            <span className="section-more">
+              <Pin size={13} style={{ verticalAlign: -2 }} /> 共 {data.top.length} 篇置顶
+            </span>
+          </div>
+          <div className="card-grid">
+            {extraTop.map((item) => (
+              <ContentCard key={item.id} item={item} />
+            ))}
+          </div>
         </section>
       ) : null}
 

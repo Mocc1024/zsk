@@ -5,6 +5,7 @@ namespace app\controller;
 
 use app\BaseController;
 use app\model\Category;
+use app\service\ContentCache;
 use app\service\Permission;
 use think\facade\Db;
 
@@ -126,6 +127,9 @@ class CategoryController extends BaseController
 
         $this->log('category', 'create', '新增分类：' . $payload['name']);
 
+        // 首页聚合缓存里含分类导航：立即失效，前台导航实时更新
+        ContentCache::flush();
+
         return $this->success(['id' => $model->getAttr('id')], '新增成功');
     }
 
@@ -159,6 +163,9 @@ class CategoryController extends BaseController
 
         $this->log('category', 'update', '编辑分类：' . ($payload['name'] ?? ''));
 
+        // 分类名出现在首页导航与列表条目里：立即失效前台缓存
+        ContentCache::flush();
+
         return $this->success(['id' => $id], '保存成功');
     }
 
@@ -184,6 +191,9 @@ class CategoryController extends BaseController
         $row->save(['delete_time' => date('Y-m-d H:i:s')]);
         $this->log('category', 'delete', '删除分类：' . $row->getAttr('name'));
 
+        // 分类从导航消失：立即失效前台缓存
+        ContentCache::flush();
+
         return $this->success(null, '删除成功');
     }
 
@@ -205,6 +215,9 @@ class CategoryController extends BaseController
 
         $row->save(['status' => $status, 'update_time' => date('Y-m-d H:i:s')]);
         $this->log('category', 'status', ($status ? '启用' : '禁用') . '分类：' . $row->getAttr('name'));
+
+        // 启用/禁用影响前台导航可见性：立即失效前台缓存
+        ContentCache::flush();
 
         return $this->success(null, $status ? '已启用' : '已禁用');
     }

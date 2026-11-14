@@ -645,6 +645,37 @@ button {
   transform: scale(1.05);
 }
 
+/* 分类角标：固定在封面右上角，与首页「置顶推荐」badge 同一视觉语言 */
+.post-cover-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  max-width: calc(100% - 20px);
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 无封面占位：与有图卡片同尺寸同圆角，网格排版不因缺图而参差 */
+.post-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--brand-soft), var(--line-soft));
+}
+
+.post-cover-empty-icon {
+  color: var(--brand);
+  opacity: 0.3;
+}
+
 .post-body {
   display: flex;
   flex-direction: column;

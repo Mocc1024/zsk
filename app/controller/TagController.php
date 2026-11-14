@@ -5,6 +5,7 @@ namespace app\controller;
 
 use app\BaseController;
 use app\model\Tag;
+use app\service\ContentCache;
 use think\facade\Db;
 
 /**
@@ -108,6 +109,9 @@ class TagController extends BaseController
 
         $this->log('tag', 'create', '新增标签：' . $name);
 
+        // 标签出现在文章卡片与筛选里：立即失效前台缓存
+        ContentCache::flush();
+
         return $this->success(['id' => $id], '新增成功');
     }
 
@@ -156,6 +160,9 @@ class TagController extends BaseController
 
         $this->log('tag', 'update', '编辑标签：' . ($payload['name'] ?? $row['name']));
 
+        // 标签名可能展示在文章卡片上：立即失效前台缓存
+        ContentCache::flush();
+
         return $this->success(null, '保存成功');
     }
 
@@ -180,6 +187,8 @@ class TagController extends BaseController
         Db::name('tag')->where('id', $id)->update(['delete_time' => $now, 'update_time' => $now]);
 
         $this->log('tag', 'delete', '删除标签：' . $row['name']);
+
+        ContentCache::flush();
 
         return $this->success(null, '删除成功');
     }

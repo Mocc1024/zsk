@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Eye } from 'lucide-react';
+import { BookOpen, Eye } from 'lucide-react';
 import Highlight from './Highlight';
 
 /**
@@ -10,19 +10,19 @@ import Highlight from './Highlight';
 export default function ContentCard({ item, keyword = '' }) {
   return (
     <Link to={`/content/${item.id}`} className="post-card">
-      {item.cover ? (
-        <div className="post-cover">
+      {/* 封面区：无图也要占位，保证网格排版一致；分类角标固定右上角 */}
+      <div className={`post-cover${item.cover ? '' : ' post-cover-empty'}`}>
+        {item.cover ? (
           <img src={item.cover} alt={item.title} loading="lazy" />
-        </div>
-      ) : null}
+        ) : (
+          <BookOpen size={38} className="post-cover-empty-icon" />
+        )}
+        {item.category_name ? (
+          <span className="post-cover-tag">{item.category_name}</span>
+        ) : null}
+      </div>
 
       <div className="post-body">
-        {item.category_name ? (
-          <span className="tag-chip" style={{ alignSelf: 'flex-start' }}>
-            {item.category_name}
-          </span>
-        ) : null}
-
         <h3 className="post-title">
           <Highlight text={item.title} keyword={keyword} />
         </h3>

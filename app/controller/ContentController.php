@@ -6,6 +6,7 @@ namespace app\controller;
 use app\BaseController;
 use app\model\Content;
 use app\service\AttachmentService;
+use app\service\ContentCache;
 use app\service\ContentImportExport;
 use app\service\HtmlFilter;
 use app\service\Permission;
@@ -176,6 +177,9 @@ class ContentController extends BaseController
 
         $this->log('content', 'create', '新增内容：' . $payload['title']);
 
+        // 内容已变更：立即失效前台缓存，否则前台最长要等 60 秒 TTL 过期才生效
+        ContentCache::flush();
+
         return $this->success(['id' => $id], '新增成功');
     }
 
@@ -218,6 +222,9 @@ class ContentController extends BaseController
 
         $this->log('content', 'update', '编辑内容：' . ($payload['title'] ?? $row->getAttr('title')));
 
+        // 内容已变更：立即失效前台缓存，否则前台最长要等 60 秒 TTL 过期才生效
+        ContentCache::flush();
+
         return $this->success(['id' => $id], '保存成功');
     }
 
@@ -255,6 +262,9 @@ class ContentController extends BaseController
             TagService::syncForContent($id, $tagNames);
             AttachmentService::syncForContent($id, (string) ($payload['content'] ?? ''), (string) ($payload['cover'] ?? ''));
 
+            // 自动保存新建了草稿：清缓存保持口径一致
+            ContentCache::flush();
+
             return $this->success(['id' => $id, 'saved_at' => date('H:i:s')], '已自动保存');
         }
 
@@ -283,6 +293,9 @@ class ContentController extends BaseController
             TagService::syncForContent($id, $tagNames);
         }
         AttachmentService::syncForContent($id, (string) ($current['content'] ?? ''), (string) ($current['cover'] ?? ''));
+
+        // 自动保存可能落到已发布内容上：立即失效前台缓存
+        ContentCache::flush();
 
         return $this->success(['id' => $id, 'saved_at' => date('H:i:s')], '已自动保存');
     }
@@ -375,6 +388,9 @@ class ContentController extends BaseController
 
         $this->log('content', 'restore', '恢复内容：' . $row['title']);
 
+        // 内容重新回到前台可见范围：立即失效前台缓存
+        ContentCache::flush();
+
         return $this->success(null, '已恢复');
     }
 
@@ -395,6 +411,8 @@ class ContentController extends BaseController
         Db::name('content')->where('id', $id)->delete();
 
         $this->log('content', 'force-delete', '彻底删除内容：' . $row['title']);
+
+        ContentCache::flush();
 
         return $this->success(null, '已彻底删除');
     }
@@ -428,6 +446,9 @@ class ContentController extends BaseController
 
         $this->log('content', 'batch-restore', '批量恢复内容 ' . count($rows) . ' 条');
 
+        // 内容重新回到前台可见范围：立即失效前台缓存
+        ContentCache::flush();
+
         return $this->success(['count' => count($rows)], '已恢复 ' . count($rows) . ' 条内容');
     }
 
@@ -455,6 +476,8 @@ class ContentController extends BaseController
         }
 
         $this->log('content', 'batch-force-delete', '批量彻底删除内容 ' . count($rows) . ' 条');
+
+        ContentCache::flush();
 
         return $this->success(['count' => count($rows)], '已彻底删除 ' . count($rows) . ' 条内容');
     }
@@ -607,6 +630,9 @@ class ContentController extends BaseController
 
         $this->log('content', 'delete', '删除内容：' . $title);
 
+        // 内容从前台消失：立即失效前台缓存
+        ContentCache::flush();
+
         return $this->success(null, '删除成功');
     }
 
@@ -633,6 +659,9 @@ class ContentController extends BaseController
             ->update(['delete_time' => date('Y-m-d H:i:s')]);
 
         $this->log('content', 'batch-delete', '批量删除内容 ' . count($ids) . ' 条');
+
+        // 内容从前台消失：立即失效前台缓存
+        ContentCache::flush();
 
         return $this->success(['count' => $count], '已删除 ' . $count . ' 条内容');
     }
@@ -665,6 +694,9 @@ class ContentController extends BaseController
         $text = Content::statusMap()[$status] ?? '未知';
         $this->log('content', 'status', '将内容「' . $row->getAttr('title') . '」设为' . $text);
 
+        // 发布/下架直接影响前台可见性：立即失效前台缓存
+        ContentCache::flush();
+
         return $this->success(null, '状态已更新为' . $text);
     }
 
@@ -687,6 +719,9 @@ class ContentController extends BaseController
         $row->save(['is_top' => $isTop, 'update_time' => date('Y-m-d H:i:s')]);
 
         $this->log('content', 'top', ($isTop ? '置顶' : '取消置顶') . '内容：' . $row->getAttr('title'));
+
+        // 置顶影响首页与列表排序：立即失效前台缓存
+        ContentCache::flush();
 
         return $this->success(null, $isTop ? '已置顶' : '已取消置顶');
     }
