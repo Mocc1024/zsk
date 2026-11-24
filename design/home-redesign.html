@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MCYY 知识库 · 首页重设计效果稿 v2（严格对应现有数据）</title>
+<style>
+  :root {
+    --brand: #2f54eb;
+    --brand-2: #5b8def;
+    --ink: #1a1d29;
+    --ink-2: #4b5060;
+    --ink-3: #8a8fa3;
+    --line: #e7e9f0;
+    --line-soft: #f0f2f7;
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --radius: 14px;
+    --radius-pill: 999px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #eceef4;
+    color: var(--ink);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    padding: 40px 0 80px;
+  }
+  .wrap { width: 1180px; margin: 0 auto; }
+
+  .spec-note {
+    background: linear-gradient(135deg, #1a1d29, #2b3050);
+    color: #fff;
+    border-radius: 16px;
+    padding: 22px 28px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .spec-note .badge {
+    flex: none;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.25);
+    padding: 5px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    letter-spacing: 2px;
+  }
+  .spec-note h1 { font-size: 18px; font-weight: 700; }
+  .spec-note p { font-size: 13px; color: rgba(255,255,255,.72); margin-top: 2px; }
+
+  /* 数据来源对照 */
+  .data-map {
+    background: #fff; border: 1px solid var(--line); border-radius: 14px;
+    padding: 22px 26px; margin-bottom: 56px;
+  }
+  .data-map h3 { font-size: 15px; font-weight: 800; margin-bottom: 14px; }
+  .data-map table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-map th, .data-map td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  .data-map th { color: var(--ink-3); font-weight: 600; font-size: 12px; letter-spacing: 1px; }
+  .data-map td:first-child { font-weight: 700; white-space: nowrap; }
+  .data-map code {
+    background: #f4f6fb; color: var(--brand); border-radius: 4px;
+    padding: 1px 6px; font-size: 12px; font-family: Consolas, monospace;
+  }
+  .data-map .remove { color: #d4380d; font-weight: 700; }
+
+  .browser {
+    background: #dfe2ea;
+    border-radius: 18px;
+    padding: 0 10px 10px;
+    box-shadow: 0 24px 60px rgba(26,29,41,.14);
+    margin-bottom: 64px;
+  }
+  .browser-bar { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 8px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+  .browser-url {
+    flex: 1; margin: 0 14px; background: #fff; border-radius: 8px; height: 28px;
+    display: flex; align-items: center; padding: 0 14px; color: var(--ink-3); font-size: 12.5px;
+  }
+  .browser-body { background: var(--bg); border-radius: 12px; overflow: hidden; }
+  .scheme-title {
+    font-size: 22px; font-weight: 800; margin: 0 0 14px;
+    display: flex; align-items: baseline; gap: 14px;
+  }
+  .scheme-title small { font-size: 13.5px; color: var(--ink-2); font-weight: 500; }
+  .scheme-title .tag {
+    font-size: 12px; font-weight: 700; color: var(--brand);
+    background: rgba(47,84,235,.08); padding: 3px 12px; border-radius: var(--radius-pill);
+  }
+
+  .page { background: var(--bg); min-height: 100%; }
+  .container { width: 1104px; margin: 0 auto; }
+
+  /* 导航：真实结构 = 品牌 + 分类链接（动态）+ 搜索 + 主题 + 用户 */
+  .navbar {
+    position: sticky; top: 0; z-index: 9;
+    background: rgba(255,255,255,.86);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .navbar-in { height: 64px; display: flex; align-items: center; gap: 22px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 17px; letter-spacing: .5px; }
+  .brand-logo {
+    width: 32px; height: 32px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    display: grid; place-items: center;
+    color: #fff; font-weight: 800; font-size: 15px;
+    box-shadow: 0 4px 10px rgba(47,84,235,.32);
+  }
+  .nav-links { display: flex; gap: 2px; }
+  .nav-links a {
+    color: var(--ink-2); text-decoration: none; font-size: 14px;
+    padding: 7px 13px; border-radius: var(--radius-pill); white-space: nowrap;
+  }
+  .nav-links a.on { color: var(--brand); background: rgba(47,84,235,.08); font-weight: 600; }
+  .nav-search {
+    flex: 1; max-width: 280px; margin-left: auto;
+    height: 38px; border: 1px solid var(--line);
+    background: #fff; border-radius: var(--radius-pill);
+    display: flex; align-items: center; padding: 0 16px; gap: 8px;
+    color: var(--ink-3); font-size: 13.5px;
+  }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #fff; border: 1px solid var(--line);
+    display: grid; place-items: center; color: var(--ink-2); font-size: 15px;
+  }
+  .nav-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #7c95ff, #b3c4ff);
+    color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 700;
+  }
+
+  /* 分类胶囊：数据来自 categories 接口（含 content_count） */
+  .chip-bar { display: flex; gap: 10px; padding: 18px 0 4px; flex-wrap: wrap; }
+  .chip {
+    font-size: 13.5px; color: var(--ink-2); background: #fff;
+    border: 1px solid var(--line); padding: 7px 16px;
+    border-radius: var(--radius-pill);
+  }
+  .chip small { color: var(--ink-3); font-size: 11.5px; margin-left: 4px; }
+  .chip.on { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+  .chip.on small { color: rgba(255,255,255,.7); }
+
+  .section-head { display: flex; align-items: baseline; gap: 12px; margin: 26px 0 16px; }
+  .section-head h2 { font-size: 20px; font-weight: 800; letter-spacing: .5px; }
+  .section-head .en { font-size: 12px; color: var(--ink-3); letter-spacing: 3px; text-transform: uppercase; }
+  .section-head .more { margin-left: auto; font-size: 13px; color: var(--ink-3); }
+
+  /* ===== 方案 A 焦点区：1 大 + 2×2 ===== */
+  .hero { display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px; margin-top: 14px; }
+  .hero-main {
+    position: relative; border-radius: var(--radius); overflow: hidden;
+    height: 384px;
+    background: linear-gradient(135deg, #2f54eb 0%, #6a7ff0 55%, #9db4ff 100%);
+    display: flex; align-items: flex-end;
+    box-shadow: 0 12px 32px rgba(47,84,235,.22);
+  }
+  .hero-main .cover-label {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    color: rgba(255,255,255,.28); font-size: 56px; font-weight: 800; letter-spacing: 8px;
+  }
+  .hero-main .cover-tag {
+    position: absolute; top: 16px; left: 16px;
+    background: rgba(255,255,255,.94); color: var(--brand);
+    font-size: 12.5px; font-weight: 700; padding: 4px 13px; border-radius: var(--radius-pill);
+  }
+  .hero-main .cover-pin {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(255,255,255,.2); backdrop-filter: blur(6px);
+    color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-pill);
+  }
+  .hero-main .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(15,20,40,.78), rgba(15,20,40,0) 62%); }
+  .hero-main .info { position: relative; padding: 24px; width: 100%; }
+  .hero-main h3 { position: relative; color: #fff; font-size: 24px; line-height: 1.4; margin-bottom: 10px; }
+  .hero-main .meta { position: relative; color: rgba(255,255,255,.78); font-size: 13px; display: flex; gap: 14px; }
+
+  .hero-side { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .hero-item {
+    position: relative; border-radius: var(--radius); overflow: hidden;
+    background: #fff; border: 1px solid var(--line-soft);
+    box-shadow: 0 2px 10px rgba(26,29,41,.05);
+    padding: 18px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .hero-item .thumb { height: 96px; border-radius: 9px; position: relative; overflow: hidden; }
+  .hero-item:nth-child(1) .thumb { background: linear-gradient(135deg, #6a7ff0, #9db4ff); }
+  .hero-item:nth-child(2) .thumb { background: linear-gradient(135deg, #4662d8, #7c95ff); }
+  .hero-item:nth-child(3) .thumb { background: linear-gradient(135deg, #2f54eb, #5b8def); }
+  .hero-item:nth-child(4) .thumb { background: linear-gradient(135deg, #5b8def, #8aa9ff); }
+  .hero-item .thumb.ph { background: linear-gradient(135deg, #eef1fb, #dde3f7); }
+  .hero-item .cat {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(255,255,255,.94); color: var(--brand);
+    font-size: 11.5px; font-weight: 700; padding: 2.5px 10px; border-radius: var(--radius-pill);
+  }
+  .hero-item h4 { font-size: 14.5px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .hero-item .meta { font-size: 12px; color: var(--ink-3); display: flex; gap: 10px; }
+
+  /* ===== 方案 A 两栏主体 ===== */
+  .main-2col { display: grid; grid-template-columns: 1fr 300px; gap: 26px; margin-top: 8px; }
+  .feed-item {
+    display: grid; grid-template-columns: 168px 1fr; gap: 18px;
+    background: var(--card); border: 1px solid var(--line-soft);
+    border-radius: var(--radius); padding: 14px; margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(26,29,41,.04);
+  }
+  .feed-item .cover {
+    height: 118px; border-radius: 10px; position: relative; overflow: hidden;
+    display: grid; place-items: center; color: rgba(255,255,255,.35); font-size: 19px; font-weight: 800;
+  }
+  .feed-item:nth-child(5n+1) .cover { background: linear-gradient(135deg, #2f54eb, #7c95ff); }
+  .feed-item:nth-child(5n+2) .cover { background: linear-gradient(135deg, #4662d8, #6a7ff0); }
+  .feed-item:nth-child(5n+3) .cover { background: linear-gradient(135deg, #5b8def, #9db4ff); }
+  .feed-item:nth-child(5n+4) .cover { background: linear-gradient(135deg, #7c95ff, #b3c4ff); }
+  .feed-item:nth-child(5n) .cover { background: linear-gradient(135deg, #1e3ab8, #4662d8); }
+  .feed-item .cover .cat {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255,255,255,.94); color: var(--brand);
+    font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: var(--radius-pill);
+  }
+  .feed-item .cover.ph-empty { background: linear-gradient(135deg, #eef1fb, #dde3f7); color: #b6c2ec; }
+  .feed-body { padding-top: 2px; display: flex; flex-direction: column; }
+  .feed-body h3 { font-size: 17px; font-weight: 700; line-height: 1.45; margin-bottom: 8px; }
+  .feed-body h3 .pin {
+    display: inline-block; vertical-align: 2px; margin-right: 8px;
+    background: #ff5c33; color: #fff; font-size: 11px; font-weight: 700;
+    padding: 1.5px 8px; border-radius: 5px;
+  }
+  .feed-body .excerpt {
+    font-size: 13.5px; color: var(--ink-2);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    margin-bottom: auto;
+  }
+  .feed-body .meta {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 12.5px; color: var(--ink-3); margin-top: 12px;
+  }
+  .feed-body .meta .tags { display: flex; gap: 6px; }
+  .feed-body .meta .tags span {
+    background: rgba(47,84,235,.07); color: var(--brand);
+    font-size: 11.5px; padding: 2px 9px; border-radius: 6px;
+  }
+
+  /* 右侧栏：只保留有真实数据源的两块 */
+  .side-card {
+    background: var(--card); border: 1px solid var(--line-soft);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(26,29,41,.04);
+  }
+  .side-card h3 { font-size: 15.5px; font-weight: 800; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .side-card h3::before { content: ""; width: 4px; height: 16px; border-radius: 2px; background: linear-gradient(180deg, var(--brand), var(--brand-2)); }
+  .rank-item { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px dashed var(--line-soft); }
+  .rank-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .rank-no {
+    flex: none; width: 22px; height: 22px; border-radius: 6px;
+    display: grid; place-items: center; font-size: 12px; font-weight: 800;
+    background: #f0f2f7; color: var(--ink-3);
+  }
+  .rank-item:nth-child(1) .rank-no { background: linear-gradient(135deg, #ff5c33, #ff8a5c); color: #fff; }
+  .rank-item:nth-child(2) .rank-no { background: linear-gradient(135deg, #ff8a00, #ffb04d); color: #fff; }
+  .rank-item:nth-child(3) .rank-no { background: linear-gradient(135deg, #ffc300, #ffd763); color: #fff; }
+  .rank-item p {
+    font-size: 13.5px; line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .rank-item .views { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag-cloud span {
+    font-size: 12.5px; color: var(--ink-2); background: #f4f6fb;
+    padding: 5px 12px; border-radius: var(--radius-pill); border: 1px solid var(--line-soft);
+  }
+  .tag-cloud span.hot { color: var(--brand); background: rgba(47,84,235,.07); border-color: rgba(47,84,235,.15); font-weight: 600; }
+
+  /* 页脚：严格按现有结构（品牌 + desc + 三个真实入口 + 版权/备案） */
+  .footer { background: #171a26; color: #fff; padding: 36px 0 0; }
+  .footer-inner { display: flex; justify-content: space-between; gap: 40px; padding-bottom: 26px; }
+  .footer .fbrand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; margin-bottom: 10px; }
+  .footer .fbrand .brand-logo { width: 28px; height: 28px; font-size: 13px; border-radius: 8px; }
+  .footer .desc { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.9; max-width: 460px; }
+  .footer-links { display: flex; flex-direction: column; gap: 4px; text-align: right; }
+  .footer-links a { color: rgba(255,255,255,.65); text-decoration: none; font-size: 13.5px; padding: 2px 0; }
+  .footer-copy {
+    border-top: 1px solid rgba(255,255,255,.08);
+    padding: 16px 0; text-align: center;
+    font-size: 12.5px; color: rgba(255,255,255,.4);
+  }
+  .footer-copy a { color: rgba(255,255,255,.55); text-decoration: underline; }
+
+  /* ===== 方案 B ===== */
+  .hero-b { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; margin-top: 14px; }
+  .b-big {
+    position: relative; height: 320px; border-radius: var(--radius); overflow: hidden;
+    background: linear-gradient(135deg, #2f54eb, #7c95ff);
+    display: flex; align-items: flex-end;
+    box-shadow: 0 12px 32px rgba(47,84,235,.22);
+  }
+  .b-big .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(15,20,40,.78), transparent 60%); }
+  .b-big h3 { position: relative; color: #fff; font-size: 23px; padding: 22px; }
+  .b-list { display: flex; flex-direction: column; gap: 12px; }
+  .b-row {
+    display: flex; align-items: center; gap: 14px;
+    background: #fff; border: 1px solid var(--line-soft); border-radius: 12px;
+    padding: 10px 14px; box-shadow: 0 2px 8px rgba(26,29,41,.04);
+  }
+  .b-row .mini {
+    width: 74px; height: 52px; border-radius: 8px; flex: none; position: relative;
+    display: grid; place-items: center; color: rgba(255,255,255,.4); font-size: 13px; font-weight: 700;
+  }
+  .b-row:nth-child(1) .mini { background: linear-gradient(135deg, #4662d8, #7c95ff); }
+  .b-row:nth-child(2) .mini { background: linear-gradient(135deg, #5b8def, #9db4ff); }
+  .b-row:nth-child(3) .mini { background: linear-gradient(135deg, #2f54eb, #6a7ff0); }
+  .b-row:nth-child(4) .mini { background: linear-gradient(135deg, #7c95ff, #b3c4ff); }
+  .b-row:nth-child(5) .mini { background: linear-gradient(135deg, #1e3ab8, #4662d8); }
+  .b-row .mini .cat {
+    position: absolute; top: 5px; right: 5px;
+    background: rgba(255,255,255,.94); color: var(--brand);
+    font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 4px;
+  }
+  .b-row .t { flex: 1; min-width: 0; }
+  .b-row .t h4 { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .b-row .t i { font-style: normal; font-size: 12px; color: var(--ink-3); }
+  .grid-b { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card-b { background: #fff; border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 8px rgba(26,29,41,.04); }
+  .card-b .cover { height: 140px; position: relative; display: grid; place-items: center; color: rgba(255,255,255,.4); font-size: 22px; font-weight: 700; }
+  .card-b:nth-child(3n+1) .cover { background: linear-gradient(135deg, #2f54eb, #7c95ff); }
+  .card-b:nth-child(3n+2) .cover { background: linear-gradient(135deg, #4662d8, #9db4ff); }
+  .card-b:nth-child(3n) .cover { background: linear-gradient(135deg, #5b8def, #1e3ab8); }
+  .card-b .ph { background: linear-gradient(135deg, #eef1fb, #dde3f7); color: #b6c2ec; }
+  .card-b .cover .cat { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,.94); color: var(--brand); font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: var(--radius-pill); }
+  .card-b .pad { padding: 16px 16px 14px; }
+  .card-b h4 { font-size: 15px; line-height: 1.5; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-b .meta { font-size: 12px; color: var(--ink-3); display: flex; gap: 12px; }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 20px; }
+  .note-card { background: #fff; border-radius: 14px; padding: 24px 26px; border: 1px solid var(--line); }
+  .note-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .note-card h3 .tag { font-size: 11px; color: #fff; padding: 2px 10px; border-radius: var(--radius-pill); }
+  .note-card ul { list-style: none; }
+  .note-card li { font-size: 13.5px; color: var(--ink-2); padding: 5px 0 5px 18px; position: relative; }
+  .note-card li::before { content: ""; position: absolute; left: 0; top: 13px; width: 6px; height: 6px; border-radius: 50%; background: var(--brand-2); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="spec-note">
+      <span class="badge">效果稿 v2</span>
+      <div>
+        <h1>MCYY 知识库 · 首页重设计方案（严格对应现有数据）</h1>
+        <p>已删除上一稿虚构的「站点统计卡」；页面上每个区块都只使用后台现有接口字段，下方附数据来源对照表。仍未改动任何代码。</p>
+      </div>
+    </div>
+
+    <!-- 数据来源对照 -->
+    <div class="data-map">
+      <h3>每个区块的真实数据来源（对照后台现有能力）</h3>
+      <table>
+        <tr><th style="width:190px">页面区块</th><th>数据来源</th><th style="width:300px">用到的字段</th></tr>
+        <tr>
+          <td>顶部导航分类</td>
+          <td><code>GET /api/front/categories</code>（现有，导航已在用）</td>
+          <td>分类 name</td>
+        </tr>
+        <tr>
+          <td>分类胶囊筛选条</td>
+          <td>同上分类接口，新增一个横向展示位（不新增接口）</td>
+          <td>name、content_count</td>
+        </tr>
+        <tr>
+          <td>编辑推荐（头条 + 网格）</td>
+          <td><code>GET /api/front/home</code> 的 <code>top</code> 数组（现有，已取 12 条）</td>
+          <td>cover、category_name、title、author、publish_time、views、is_top</td>
+        </tr>
+        <tr>
+          <td>最新发布内容流</td>
+          <td>home 的 <code>latest</code> 数组（现有）</td>
+          <td>cover、summary、category_name、tags、author、publish_time、views、comment_count</td>
+        </tr>
+        <tr>
+          <td>热门阅读 Top5</td>
+          <td>home 的 <code>hot</code> 数组（现有，按 views 排序）</td>
+          <td>title、views</td>
+        </tr>
+        <tr>
+          <td>标签云</td>
+          <td>现有逻辑：从已加载内容聚合 tags（Home.jsx 里已有）</td>
+          <td>tags</td>
+        </tr>
+        <tr>
+          <td>页脚</td>
+          <td>完全按现有页脚：品牌 + 简介 + 首页/搜索/我的收藏 + 版权与备案号</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td class="remove">上一稿的「站点统计卡」（文章数/总阅读）</td>
+          <td class="remove">已删除 —— 后台没有该聚合接口，属于虚构模块</td>
+          <td class="remove">—</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ================= 方案 A ================= -->
+    <div class="scheme-title">方案 A · 杂志式两栏 <span class="tag">主推</span><small>焦点区更有编辑感；内容流改为横条卡；右侧栏只放热门榜与标签云（两者现有代码已实现）</small></div>
+    <div class="browser">
+      <div class="browser-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <div class="browser-url">https://www.mcyy24.com/</div>
+      </div>
+      <div class="browser-body">
+        <div class="page">
+          <!-- 导航 -->
+          <div class="navbar">
+            <div class="container navbar-in">
+              <div class="brand"><span class="brand-logo">M</span>MCYY 知识库</div>
+              <div class="nav-links">
+                <a class="on" href="javascript:void(0)">首页</a>
+                <a href="javascript:void(0)">前端开发</a>
+                <a href="javascript:void(0)">后端架构</a>
+                <a href="javascript:void(0)">数据库</a>
+                <a href="javascript:void(0)">运维部署</a>
+              </div>
+              <div class="nav-search">🔍 搜索内容、标签</div>
+              <div class="icon-btn">☾</div>
+              <div class="nav-avatar">M</div>
+            </div>
+          </div>
+
+          <div class="container" style="padding-bottom: 36px;">
+            <!-- 分类胶囊 -->
+            <div class="chip-bar">
+              <span class="chip on">全部<small>128</small></span>
+              <span class="chip">前端开发<small>32</small></span>
+              <span class="chip">后端架构<small>28</small></span>
+              <span class="chip">数据库<small>21</small></span>
+              <span class="chip">运维部署<small>19</small></span>
+              <span class="chip">产品设计<small>16</small></span>
+              <span class="chip">行业动态<small>12</small></span>
+            </div>
+
+            <!-- 焦点区 -->
+            <div class="section-head"><h2>编辑推荐</h2><span class="en">FEATURED</span><span class="more">共 6 篇置顶</span></div>
+            <div class="hero">
+              <div class="hero-main">
+                <span class="cover-label">封 面 图</span>
+                <span class="cover-tag">后端架构</span>
+                <span class="cover-pin">置顶推荐</span>
+                <div class="shade"></div>
+                <div class="info">
+                  <h3>从单机到集群：一套内容管理系统的架构演进复盘</h3>
+                  <div class="meta"><span>陈一</span><span>2026-11-13</span><span>1.2k 次浏览</span></div>
+                </div>
+              </div>
+              <div class="hero-side">
+                <div class="hero-item">
+                  <div class="thumb"><span class="cat">前端开发</span></div>
+                  <h4>React 19 新特性在真实项目中的落地实践</h4>
+                  <div class="meta"><span>2 天前发布</span><span>856 浏览</span></div>
+                </div>
+                <div class="hero-item">
+                  <div class="thumb"><span class="cat">数据库</span></div>
+                  <h4>MySQL 8 索引设计的十个常见误区</h4>
+                  <div class="meta"><span>4 天前发布</span><span>741 浏览</span></div>
+                </div>
+                <div class="hero-item">
+                  <div class="thumb"><span class="cat">运维部署</span></div>
+                  <h4>零 downtime 发布：灰度策略与回滚预案</h4>
+                  <div class="meta"><span>5 天前发布</span><span>693 浏览</span></div>
+                </div>
+                <div class="hero-item">
+                  <div class="thumb ph"><span class="cat">产品设计</span></div>
+                  <h4>知识型产品的信息架构：分类还是标签？</h4>
+                  <div class="meta"><span>1 周前发布</span><span>598 浏览</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 两栏主体 -->
+            <div class="main-2col">
+              <div>
+                <div class="section-head"><h2>最新发布</h2><span class="en">LATEST</span></div>
+                <div class="feed-item">
+                  <div class="cover"><span class="cat">前端开发</span>封面</div>
+                  <div class="feed-body">
+                    <h3><span class="pin">置顶</span>Vite 7 构建性能调优实录：从 42s 到 9s</h3>
+                    <p class="excerpt">本文记录一次真实的构建链路优化：依赖预构建的策略、按需分包的取舍，以及为什么最终放弃了 esbuild 的部分能力……</p>
+                    <div class="meta">
+                      <span>陈一</span><span>2026-11-15</span><span>👁 432</span><span>💬 12</span>
+                      <div class="tags"><span>构建</span><span>工程化</span></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="feed-item">
+                  <div class="cover ph-empty"><span class="cat">数据库</span>无封面</div>
+                  <div class="feed-body">
+                    <h3>InnoDB 缓冲池调优：2G 小内存服务器上的生存指南</h3>
+                    <p class="excerpt">小内存机器跑 MySQL 8 并不是只能听天由命。缓冲池、临时表、连接数的三者配比决定了崩溃还是平稳……</p>
+                    <div class="meta">
+                      <span>陈一</span><span>2026-11-14</span><span>👁 318</span><span>💬 8</span>
+                      <div class="tags"><span>MySQL</span><span>调优</span></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="feed-item">
+                  <div class="cover"><span class="cat">运维部署</span>封面</div>
+                  <div class="feed-body">
+                    <h3>Nginx 伪静态配置清单：SPA 项目的十二个必查项</h3>
+                    <p class="excerpt">每次动站点配置都可能把 try_files 弄丢。这份清单把验证命令、常见症状与修复方法按顺序整理成一次 30 秒的巡检……</p>
+                    <div class="meta">
+                      <span>李同</span><span>2026-11-13</span><span>👁 276</span><span>💬 5</span>
+                      <div class="tags"><span>Nginx</span><span>部署</span></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="feed-item">
+                  <div class="cover"><span class="cat">行业动态</span>封面</div>
+                  <div class="feed-body">
+                    <h3>2026 内容平台趋势观察：私域知识库的回潮</h3>
+                    <p class="excerpt">当算法推荐把注意力切碎，越来越多人回到自建知识库。这一轮回潮背后的工具链变化值得每个写作者关注……</p>
+                    <div class="meta">
+                      <span>王五</span><span>2026-11-12</span><span>👁 251</span><span>💬 3</span>
+                      <div class="tags"><span>观察</span><span>写作</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 右侧栏：仅热门阅读 + 标签云（均为现有功能） -->
+              <div>
+                <div class="side-card">
+                  <h3>热门阅读</h3>
+                  <div class="rank-item"><span class="rank-no">1</span><div><p>从单机到集群：内容管理系统架构演进复盘</p><div class="views">1.2k 次浏览</div></div></div>
+                  <div class="rank-item"><span class="rank-no">2</span><div><p>React 19 新特性在真实项目中的落地实践</p><div class="views">856 次浏览</div></div></div>
+                  <div class="rank-item"><span class="rank-no">3</span><div><p>MySQL 8 索引设计的十个常见误区</p><div class="views">741 次浏览</div></div></div>
+                  <div class="rank-item"><span class="rank-no">4</span><div><p>零 downtime 发布：灰度策略与回滚预案</p><div class="views">693 次浏览</div></div></div>
+                  <div class="rank-item"><span class="rank-no">5</span><div><p>知识型产品的信息架构：分类还是标签？</p><div class="views">598 次浏览</div></div></div>
+                </div>
+                <div class="side-card">
+                  <h3>热门标签</h3>
+                  <div class="tag-cloud">
+                    <span class="hot">架构</span><span class="hot">MySQL</span><span class="hot">React</span><span>Nginx</span><span>部署</span><span>调优</span><span>工程化</span><span>安全</span><span>缓存</span><span>写作</span><span>产品设计</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 页脚：现有结构 -->
+          <div class="footer">
+            <div class="container footer-inner">
+              <div>
+                <div class="fbrand"><span class="brand-logo">M</span>MCYY 知识库</div>
+                <p class="desc">聚焦人工智能、数字经济与产业转型的观察记录，用结构化内容把复杂问题讲清楚。</p>
+              </div>
+              <div class="footer-links">
+                <a href="javascript:void(0)">首页</a>
+                <a href="javascript:void(0)">搜索</a>
+                <a href="javascript:void(0)">我的收藏</a>
+              </div>
+            </div>
+            <div class="footer-copy">© 2026 MCYY 知识库 · 内容仅供研究参考 · <a href="javascript:void(0)">浙ICP备2026047213号-2</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 方案 B ================= -->
+    <div class="scheme-title">方案 B · 轻改版 <span class="tag" style="background:rgba(26,29,41,.07);color:var(--ink-2)">保守</span><small>保持现有单栏网格，只重排焦点区；实现成本约为方案 A 的三分之一</small></div>
+    <div class="browser">
+      <div class="browser-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <div class="browser-url">https://www.mcyy24.com/</div>
+      </div>
+      <div class="browser-body">
+        <div class="page">
+          <div class="navbar">
+            <div class="container navbar-in">
+              <div class="brand"><span class="brand-logo">M</span>MCYY 知识库</div>
+              <div class="nav-links">
+                <a class="on" href="javascript:void(0)">首页</a>
+                <a href="javascript:void(0)">前端开发</a>
+                <a href="javascript:void(0)">后端架构</a>
+                <a href="javascript:void(0)">数据库</a>
+                <a href="javascript:void(0)">运维部署</a>
+              </div>
+              <div class="nav-search">🔍 搜索内容、标签</div>
+              <div class="icon-btn">☾</div>
+              <div class="nav-avatar">M</div>
+            </div>
+          </div>
+
+          <div class="container" style="padding-bottom: 36px;">
+            <div class="chip-bar">
+              <span class="chip on">全部<small>128</small></span>
+              <span class="chip">前端开发<small>32</small></span>
+              <span class="chip">后端架构<small>28</small></span>
+              <span class="chip">数据库<small>21</small></span>
+              <span class="chip">运维部署<small>19</small></span>
+              <span class="chip">产品设计<small>16</small></span>
+            </div>
+
+            <div class="section-head"><h2>编辑推荐</h2><span class="en">FEATURED</span><span class="more">共 6 篇置顶</span></div>
+            <div class="hero-b">
+              <div class="b-big">
+                <div class="shade"></div>
+                <h3>从单机到集群：一套内容管理系统的架构演进复盘</h3>
+              </div>
+              <div class="b-list">
+                <div class="b-row"><div class="mini"><span class="cat">前端</span>图</div><div class="t"><h4>React 19 新特性在真实项目中的落地实践</h4><i>856 浏览</i></div></div>
+                <div class="b-row"><div class="mini"><span class="cat">数据库</span>图</div><div class="t"><h4>MySQL 8 索引设计的十个常见误区</h4><i>741 浏览</i></div></div>
+                <div class="b-row"><div class="mini"><span class="cat">运维</span>图</div><div class="t"><h4>零 downtime 发布：灰度策略与回滚预案</h4><i>693 浏览</i></div></div>
+                <div class="b-row"><div class="mini"><span class="cat">产品</span>图</div><div class="t"><h4>知识型产品的信息架构：分类还是标签？</h4><i>598 浏览</i></div></div>
+                <div class="b-row"><div class="mini"><span class="cat">行业</span>图</div><div class="t"><h4>2026 内容平台趋势观察：私域知识库的回潮</h4><i>552 浏览</i></div></div>
+              </div>
+            </div>
+
+            <div class="section-head"><h2>最新发布</h2><span class="en">LATEST</span></div>
+            <div class="grid-b">
+              <div class="card-b">
+                <div class="cover"><span class="cat">前端开发</span>封面</div>
+                <div class="pad"><h4>Vite 7 构建性能调优实录：从 42s 到 9s</h4><div class="meta"><span>陈一</span><span>👁 432</span></div></div>
+              </div>
+              <div class="card-b">
+                <div class="cover ph"><span class="cat">数据库</span>无封面</div>
+                <div class="pad"><h4>InnoDB 缓冲池调优：2G 小内存服务器上的生存指南</h4><div class="meta"><span>陈一</span><span>👁 318</span></div></div>
+              </div>
+              <div class="card-b">
+                <div class="cover"><span class="cat">运维部署</span>封面</div>
+                <div class="pad"><h4>Nginx 伪静态配置清单：SPA 项目的十二个必查项</h4><div class="meta"><span>李同</span><span>👁 276</span></div></div>
+              </div>
+              <div class="card-b">
+                <div class="cover ph"><span class="cat">行业动态</span>无封面</div>
+                <div class="pad"><h4>2026 内容平台趋势观察：私域知识库的回潮</h4><div class="meta"><span>王五</span><span>👁 251</span></div></div>
+              </div>
+              <div class="card-b">
+                <div class="cover"><span class="cat">产品设计</span>封面</div>
+                <div class="pad"><h4>知识型产品的信息架构：分类还是标签？</h4><div class="meta"><span>陈一</span><span>👁 598</span></div></div>
+              </div>
+              <div class="card-b">
+                <div class="cover"><span class="cat">后端架构</span>封面</div>
+                <div class="pad"><h4>从单机到集群：一套内容管理系统的架构演进复盘</h4><div class="meta"><span>陈一</span><span>👁 1.2k</span></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div class="container footer-inner">
+              <div>
+                <div class="fbrand"><span class="brand-logo">M</span>MCYY 知识库</div>
+                <p class="desc">聚焦人工智能、数字经济与产业转型的观察记录，用结构化内容把复杂问题讲清楚。</p>
+              </div>
+              <div class="footer-links">
+                <a href="javascript:void(0)">首页</a>
+                <a href="javascript:void(0)">搜索</a>
+                <a href="javascript:void(0)">我的收藏</a>
+              </div>
+            </div>
+            <div class="footer-copy">© 2026 MCYY 知识库 · 内容仅供研究参考 · <a href="javascript:void(0)">浙ICP备2026047213号-2</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="note-card">
+        <h3>方案 A 的关键变化 <span class="tag" style="background:var(--brand)">主推</span></h3>
+        <ul>
+          <li>焦点区「1 大 + 2×2 网格」，首屏置顶展示量提升（数据用 home.top，已取 12 条）</li>
+          <li>新增分类胶囊筛选条（数据用现有分类接口，含每类数量 content_count）</li>
+          <li>内容流改为「左图右文」横条卡：摘要露两行，展示作者/日期/浏览/评论/标签</li>
+          <li>右侧栏承接热门阅读与热门标签（两块现有代码里已经实现，只是从底部移到右侧）</li>
+          <li>内容卡封面右上角保留分类角标；无封面卡片渲染同尺寸占位（上一轮已实现）</li>
+          <li>实现量：重写 Home.jsx + 约 200 行 CSS，后端接口零改动</li>
+        </ul>
+      </div>
+      <div class="note-card">
+        <h3>方案 B 的取舍 <span class="tag" style="background:#8a8fa3">保守</span></h3>
+        <ul>
+          <li>保持现有单栏网格浏览习惯，用户零学习成本</li>
+          <li>焦点区右侧由竖排大卡改为紧凑快列，首屏多容纳 2 条置顶</li>
+          <li>不新增侧栏，页面更短</li>
+          <li>内容流继续用 ContentCard（与分类页/搜索页/收藏页共用组件）</li>
+          <li>实现量：只动焦点区与分类胶囊，其余维持现状</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

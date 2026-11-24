@@ -4,6 +4,7 @@ declare (strict_types = 1);
 namespace app\controller;
 
 use app\BaseController;
+use app\service\HtmlFilter;
 use app\service\SensitiveWordService;
 use app\service\Setting;
 use think\facade\Db;
@@ -33,7 +34,9 @@ class CommentAuditController extends BaseController
             ->alias('c')
             ->field('c.id, c.user_id, c.content_id, c.pid, c.content, c.status, c.like_count, c.ip, c.create_time, u.nickname, ct.title as content_title')
             ->join('user u', 'c.user_id = u.id', 'LEFT')
-            ->join('content ct', 'c.content_id = ct.id', 'LEFT');
+            ->join('content ct', 'c.content_id = ct.id', 'LEFT')
+            // 软删除的评论不进任何列表（删除是置 delete_time，不过滤会一直显示）
+            ->whereNull('c.delete_time');
 
         $status = $this->input('status', '');
         if ($status !== '' && $status !== null) {
@@ -42,6 +45,11 @@ class CommentAuditController extends BaseController
         $keyword = trim((string) $this->input('keyword', ''));
         if ($keyword !== '') {
             $query->where('c.content|u.nickname', 'like', '%' . $keyword . '%');
+        }
+        // 按文章筛选：内容管理里点某篇文章的「评论」时用
+        $contentId = (int) $this->input('content_id', 0);
+        if ($contentId > 0) {
+            $query->where('c.content_id', $contentId);
         }
 
         $total = (int) (clone $query)->count();
@@ -144,6 +152,43 @@ class CommentAuditController extends BaseController
         $this->log('comment', 'delete', '删除评论 #' . $id);
 
         return $this->success(null, '已删除');
+    }
+
+    /**
+     * 编辑评论内容（管理员修正措辞 / 清理违规字句）
+     *
+     * 只改文本，不动审核状态，冗余计数不受影响；
+     * 编辑后的文本重新过 HTML 白名单，与前台提交同一处理标准。
+     */
+    public function update($id = 0)
+    {
+        $this->checkPermission('comment.audit');
+
+        $id   = (int) ($id ?: $this->request->param('id'));
+        $text = trim((string) $this->input('content', ''));
+
+        if ($text === '') {
+            return $this->fail('评论内容不能为空');
+        }
+        if (mb_strlen($text, 'UTF-8') > 2000) {
+            return $this->fail('评论内容过长');
+        }
+
+        $comment = Db::name('comment')->where('id', $id)->whereNull('delete_time')->find();
+        if (!$comment) {
+            return $this->fail('评论不存在', 404);
+        }
+
+        $text = HtmlFilter::clean($text);
+
+        Db::name('comment')->where('id', $id)->update([
+            'content'     => $text,
+            'update_time' => date('Y-m-d H:i:s'),
+        ]);
+
+        $this->log('comment', 'edit', '编辑评论 #' . $id);
+
+        return $this->success(null, '已保存');
     }
 
     /**
@@ -258,6 +303,53 @@ class CommentAuditController extends BaseController
         $this->log('comment', 'sensitive-word', '新增敏感词 ' . $added . ' 个');
 
         return $this->success(['added' => $added], '已新增 ' . $added . ' 个');
+    }
+
+    /**
+     * 编辑敏感词（修改词语 / 处理级别 / 替换文本）
+     */
+    public function updateSensitiveWord($id = 0)
+    {
+        $this->checkPermission('comment.config');
+
+        $id   = (int) ($id ?: $this->request->param('id'));
+        $data = $this->params();
+        $word = trim((string) ($data['word'] ?? ''));
+
+        if ($word === '') {
+            return $this->fail('请输入词语');
+        }
+        if (mb_strlen($word, 'UTF-8') > 50) {
+            return $this->fail('词语过长');
+        }
+
+        $row = Db::name('sensitive_word')->where('id', $id)->find();
+        if (!$row) {
+            return $this->fail('敏感词不存在', 404);
+        }
+
+        // 词唯一：改成已存在的词会导致重复命中
+        $dup = Db::name('sensitive_word')
+            ->where('word', $word)
+            ->where('id', '<>', $id)
+            ->find();
+        if ($dup) {
+            return $this->fail('该词语已存在');
+        }
+
+        Db::name('sensitive_word')->where('id', $id)->update([
+            'word'        => $word,
+            'level'       => (int) ($data['level'] ?? SensitiveWordService::LEVEL_REPLACE),
+            'replacement' => trim((string) ($data['replacement'] ?? '***')) ?: '***',
+            'update_time' => date('Y-m-d H:i:s'),
+        ]);
+
+        // 词库变了，缓存必须失效
+        SensitiveWordService::refresh();
+
+        $this->log('comment', 'sensitive-word', '编辑敏感词 #' . $id);
+
+        return $this->success(null, '已保存');
     }
 
     /**

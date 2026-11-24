@@ -58,6 +58,7 @@ export const levelApi = {
 export const commentAuditApi = {
   list: (params) => request.get('/comment-audit', { params }),
   audit: (id, result, note) => request.put(`/comment-audit/${id}/audit`, { result, handle_result: note }),
+  update: (id, content) => request.put(`/comment-audit/${id}`, { content }),
   remove: (id) => request.delete(`/comment-audit/${id}`),
   config: () => request.get('/comment-audit/config'),
   saveConfig: (data) => request.put('/comment-audit/config', data),
@@ -65,6 +66,7 @@ export const commentAuditApi = {
 
 /** 敏感词库（M3.7） */
 export const sensitiveApi = {
+  update: (id, data) => request.put(`/sensitive-word/${id}`, data),
   list: (params) => request.get('/sensitive-word', { params }),
   create: (data) => request.post('/sensitive-word', data),
   remove: (id) => request.delete(`/sensitive-word/${id}`),

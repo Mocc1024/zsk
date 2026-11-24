@@ -153,11 +153,13 @@ Route::group('api', function () {
         Route::put('comment-audit/config', '\app\controller\CommentAuditController@saveConfig');
         Route::get('comment-audit', '\app\controller\CommentAuditController@index');
         Route::put('comment-audit/:id/audit', '\app\controller\CommentAuditController@audit');
+        Route::put('comment-audit/:id', '\app\controller\CommentAuditController@update');
         Route::delete('comment-audit/:id', '\app\controller\CommentAuditController@delete');
 
         // 敏感词库
         Route::get('sensitive-word', '\app\controller\CommentAuditController@sensitiveWords');
         Route::post('sensitive-word', '\app\controller\CommentAuditController@saveSensitiveWord');
+        Route::put('sensitive-word/:id', '\app\controller\CommentAuditController@updateSensitiveWord');
         Route::delete('sensitive-word/:id', '\app\controller\CommentAuditController@deleteSensitiveWord');
 
         // 举报处理

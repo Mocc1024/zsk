@@ -54,6 +54,12 @@ class CommentController extends BaseController
         $total = (int) (clone $query)->count();
         $tops  = $query->order('c.create_time', 'desc')->page($page, $limit)->select()->toArray();
 
+        // 敏感词展示层替换：只动输出不动库
+        foreach ($tops as &$top) {
+            $top['content'] = SensitiveWordService::display((string) $top['content']);
+        }
+        unset($top);
+
         $rootIds = array_column($tops, 'id');
         $replies = $rootIds
             ? Db::name('comment')
@@ -75,6 +81,8 @@ class CommentController extends BaseController
         $grouped = [];
         foreach ($replies as $reply) {
             $reply['liked'] = in_array((int) $reply['id'], $likedIds, true);
+            // 敏感词展示层替换：只动输出不动库
+            $reply['content'] = SensitiveWordService::display((string) $reply['content']);
             $grouped[(int) $reply['root_id']][] = $reply;
         }
 
@@ -138,10 +146,10 @@ class CommentController extends BaseController
             $rootId = (int) ($parent['root_id'] ?: $parent['id']);
         }
 
-        // 敏感词：3 级命中转待审，2 级替换，1 级仅记录
-        $filtered = SensitiveWordService::filter($text);
-        $text     = $filtered['text'];
-        $blocked  = $filtered['blocked'];
+        // 敏感词只做检测：3 级命中转待审。原文完整入库，
+        // 替换级（2 级）由 SensitiveWordService::display() 在前台展示时替换，库中保留原词
+        $detected = SensitiveWordService::detect($text);
+        $blocked  = $detected['blocked'];
 
         // 正文再过一次 HTML 白名单：评论是用户输入，不能直接入库原样
         $text = HtmlFilter::clean($text);

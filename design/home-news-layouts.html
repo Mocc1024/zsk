@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>最新资讯 · 排版备选方案</title>
+<style>
+  :root {
+    --brand: #3b6bff;
+    --ink: #0e1730;
+    --ink-2: #5b6478;
+    --ink-3: #98a0b3;
+    --line: #e6eaf2;
+    --card: #ffffff;
+    --bg: #f7f9ff;
+    --radius: 14px;
+    --pill: 999px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--ink); font-size: 15px;
+    line-height: 1.7; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  .page-head { margin-bottom: 36px; }
+  .page-head h1 { font-size: 26px; font-weight: 800; letter-spacing: 1px; }
+  .page-head p { color: var(--ink-2); font-size: 14px; margin-top: 8px; max-width: 760px; }
+  .now {
+    background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 20px; margin-bottom: 40px; font-size: 13.5px; color: var(--ink-2);
+  }
+  .now b { color: var(--ink); }
+
+  .scheme { margin-bottom: 56px; }
+  .scheme-tag { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .scheme-tag .no {
+    width: 28px; height: 28px; border-radius: 9px; color: #fff; font-weight: 800; font-size: 14px;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, #3b6bff, #6a8bff);
+  }
+  .scheme-tag h2 { font-size: 19px; font-weight: 800; letter-spacing: .5px; }
+  .scheme-desc { color: var(--ink-2); font-size: 13.5px; margin: 4px 0 16px; max-width: 760px; }
+  .pros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .pros span {
+    font-size: 12px; padding: 3px 10px; border-radius: var(--pill);
+    background: #eef3ff; color: #2f54eb; font-weight: 600;
+  }
+  .pros span.con { background: #fff3f0; color: #d4380d; }
+
+  /* ============ 方案 1：报刊行 ============ */
+  .press {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 6px 24px; box-shadow: 0 2px 10px rgba(16,24,40,.05);
+  }
+  .press-row {
+    display: flex; align-items: center; gap: 16px; padding: 13px 0;
+    border-bottom: 1px dashed #eef1f7;
+  }
+  .press-row:last-child { border-bottom: none; }
+  .press-date {
+    flex: none; font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums;
+    width: 118px; letter-spacing: .2px;
+  }
+  .press-title {
+    flex: 1; min-width: 0; font-size: 15px; font-weight: 600; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: color .2s;
+  }
+  .press-row:hover .press-title { color: var(--brand); }
+  .press-cat {
+    flex: none; font-size: 11.5px; font-weight: 700; color: var(--brand);
+    background: #eef3ff; padding: 2px 10px; border-radius: var(--pill);
+  }
+  .press-hot { flex: none; font-size: 12px; color: var(--ink-3); width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ============ 方案 2：时间轴 ============ */
+  .timeline {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 26px 28px; box-shadow: 0 2px 10px rgba(16,24,40,.05);
+    display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0 48px;
+  }
+  .tl-col { position: relative; }
+  .tl-col::before {
+    content: ""; position: absolute; left: 3px; top: 8px; bottom: 8px;
+    width: 2px; background: linear-gradient(180deg, #c7d5f5, #e6eaf2);
+    border-radius: 2px;
+  }
+  .tl-item { position: relative; padding: 9px 0 9px 26px; }
+  .tl-dot {
+    position: absolute; left: 0; top: 18px; width: 8px; height: 8px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--brand);
+  }
+  .tl-item:first-child .tl-dot { background: var(--brand); }
+  .tl-time {
+    font-size: 12px; color: var(--brand); font-weight: 700; font-variant-numeric: tabular-nums;
+    letter-spacing: .3px;
+  }
+  .tl-title {
+    margin-top: 2px; font-size: 14.5px; font-weight: 600; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .2s;
+  }
+  .tl-item:hover .tl-title { color: var(--brand); }
+  .tl-cat { font-size: 11.5px; color: var(--ink-3); margin-left: 8px; }
+
+  /* ============ 方案 3：小方图 ============ */
+  .thumb-grid {
+    display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px 18px;
+  }
+  .thumb-card {
+    display: flex; gap: 14px; background: var(--card);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 12px; box-shadow: 0 2px 10px rgba(16,24,40,.05);
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+  }
+  .thumb-card:hover { transform: translateY(-2px); border-color: var(--brand); box-shadow: 0 12px 28px rgba(59,107,255,.14); }
+  .thumb-pic {
+    flex: none; width: 96px; height: 72px; border-radius: 10px; position: relative; overflow: hidden;
+    background: linear-gradient(140deg, #7fa5ff, #c3d4ff);
+  }
+  .thumb-pic.ph { background: linear-gradient(140deg, #eef3ff, #dfe8ff); }
+  .thumb-pic .cat {
+    position: absolute; left: 6px; bottom: 6px;
+    background: rgba(255,255,255,.94); color: var(--brand);
+    font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: var(--pill);
+    max-width: calc(100% - 12px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .thumb-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .thumb-title {
+    font-size: 14px; font-weight: 700; color: var(--ink); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    transition: color .2s;
+  }
+  .thumb-card:hover .thumb-title { color: var(--brand); }
+  .thumb-meta {
+    margin-top: auto; padding-top: 8px; font-size: 11.5px; color: var(--ink-3);
+    font-variant-numeric: tabular-nums; display: flex; gap: 10px; align-items: center;
+  }
+
+  /* ============ 方案 4：榜单行（参考热搜榜） ============ */
+  .board {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: 0 2px 10px rgba(16,24,40,.05); overflow: hidden;
+  }
+  .board-row {
+    display: flex; align-items: flex-start; gap: 18px;
+    padding: 18px 22px; border-bottom: 1px solid #f2f4f9;
+    transition: background .18s;
+  }
+  .board-row:last-child { border-bottom: none; }
+  .board-row:hover { background: #fafbff; }
+
+  .board-pic {
+    position: relative; flex: none; width: 104px; height: 78px;
+    border-radius: 12px; overflow: hidden;
+    background: linear-gradient(140deg, #7fa5ff, #c3d4ff);
+  }
+  .board-pic.ph { background: linear-gradient(140deg, #eef3ff, #dfe8ff); }
+
+  .board-main { flex: 1; min-width: 0; }
+  .board-title-row { display: flex; align-items: center; gap: 8px; }
+  .board-title {
+    font-size: 17px; font-weight: 800; color: var(--ink); letter-spacing: .2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: color .18s;
+  }
+  .board-row:hover .board-title { color: var(--brand); }
+  .board-tag {
+    flex: none; font-size: 11px; font-weight: 700; padding: 1px 8px;
+    border-radius: 6px; background: #eef3ff; color: #2f54eb;
+  }
+  .board-sum {
+    margin-top: 5px; font-size: 13.5px; color: #8d94a8; line-height: 1.65;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .board-more { margin-top: 4px; font-size: 12.5px; color: #a8b3cc; }
+
+  .board-time { flex: none; width: 112px; text-align: right; padding-top: 2px; }
+  .board-time b {
+    display: block; font-size: 15px; font-weight: 600; color: #5b6478;
+    font-variant-numeric: tabular-nums; letter-spacing: .2px;
+  }
+  .board-time span { display: block; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  .note { margin-top: 40px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 24px; }
+  .note h3 { font-size: 15px; margin-bottom: 10px; }
+  .note table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .note th, .note td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0f2f8; color: var(--ink-2); }
+  .note th { color: var(--ink); font-weight: 700; }
+  .note td b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="page-head">
+    <h1>「最新资讯」排版备选方案</h1>
+    <p>三个方案共用同一份真实字段（标题 / 分类 / 发布时间到秒 / 浏览量），展示 10 条。选定后我按该版式改 Home.jsx，Hero、精选推荐、热门阅读、页脚都不动。</p>
+  </div>
+
+  <div class="now">
+    <b>现状（你不顺眼的这版）</b>：两列「左图右文」横卡 ×10，图占 44%、16:9，右侧标题两行 + 时间。通常的问题是：图大文字少、卡片被图区撑得松散、两列间视线跳跃。
+  </div>
+
+  <!-- ========== 方案 1 ========== -->
+  <div class="scheme">
+    <div class="scheme-tag"><span class="no">1</span><h2>报刊行 · 纯文字列表</h2></div>
+    <p class="scheme-desc">去掉图，回归最经典的资讯列表：时间｜标题｜分类｜浏览量，一行一条。信息密度最高，视线扫得最快。</p>
+    <div class="pros">
+      <span>极简干净</span><span>10 条一眼扫完</span><span>时间信息醒目</span>
+      <span class="con">没有图，视觉吸引力下降</span>
+    </div>
+    <div class="press">
+      <div class="press-row">
+        <span class="press-date">11-16 09:24:15</span>
+        <span class="press-title">Vite 7 构建性能调优实录：从 42s 到 9s 的完整过程</span>
+        <span class="press-cat">前端开发</span>
+        <span class="press-hot">640 阅读</span>
+      </div>
+      <div class="press-row">
+        <span class="press-date">11-15 18:03:42</span>
+        <span class="press-title">InnoDB 缓冲池调优：2G 小内存服务器上的生存指南</span>
+        <span class="press-cat">数据库</span>
+        <span class="press-hot">512 阅读</span>
+      </div>
+      <div class="press-row">
+        <span class="press-date">11-15 10:27:08</span>
+        <span class="press-title">DeepSeek 重磅开源超级 Agent，一键生成完整应用</span>
+        <span class="press-cat">AI 前沿</span>
+        <span class="press-hot">470 阅读</span>
+      </div>
+      <div class="press-row">
+        <span class="press-date">11-14 21:45:33</span>
+        <span class="press-title">Nginx 反向代理超时配置排查：一个 502 引发的三层坑</span>
+        <span class="press-cat">运维部署</span>
+        <span class="press-hot">388 阅读</span>
+      </div>
+      <div class="press-row">
+        <span class="press-date">11-14 15:12:50</span>
+        <span class="press-title">React Server Components 落地半年后的真实体验</span>
+        <span class="press-cat">前端开发</span>
+        <span class="press-hot">356 阅读</span>
+      </div>
+      <div class="press-row">
+        <span class="press-date">11-13 11:38:21</span>
+        <span class="press-title">从 0 搭建私有化向量检索服务的踩坑笔记</span>
+        <span class="press-cat">AI 前沿</span>
+        <span class="press-hot">301 阅读</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 方案 2 ========== -->
+  <div class="scheme">
+    <div class="scheme-tag"><span class="no">2</span><h2>时间轴流 · 双列</h2></div>
+    <p class="scheme-desc">把「最新」的时间属性做成视觉主角：竖向时间轴 + 时分秒蓝色高亮，右侧标题。双列并排，整块高度只有现在的一半。</p>
+    <div class="pros">
+      <span>强调时效感</span><span>时分秒成设计元素</span><span>布局紧凑</span>
+      <span class="con">依然无图</span>
+    </div>
+    <div class="timeline">
+      <div class="tl-col">
+        <div class="tl-item">
+          <span class="tl-dot"></span>
+          <div class="tl-time">11-16 09:24:15</div>
+          <div class="tl-title">Vite 7 构建性能调优实录<span class="tl-cat">前端开发</span></div>
+        </div>
+        <div class="tl-item">
+          <span class="tl-dot"></span>
+          <div class="tl-time">11-15 18:03:42</div>
+          <div class="tl-title">InnoDB 缓冲池调优：2G 生存指南<span class="tl-cat">数据库</span></div>
+        </div>
+        <div class="tl-item">
+          <span class="tl-dot"></span>
+          <div class="tl-time">11-15 10:27:08</div>
+          <div class="tl-title">DeepSeek 开源超级 Agent<span class="tl-cat">AI 前沿</span></div>
+        </div>
+        <div class="tl-item">
+          <span class="tl-dot"></span>
+          <div class="tl-time">11-14 21:45:33</div>
+          <div class="tl-title">Nginx 502 排查三层坑<span class="tl-cat">运维部署</span></div>
+        </div>
+        <div class="tl-item">
+          <span class="tl-dot"></span>
+          <div class="tl-time">11-14 15:12:50</div>
+          <div class="tl-title">RSC 落地半年真实体验<span class="tl-cat">前端开发</span></div>
+        </div>
+      </div>
+      <div class="tl-col">
+        <div class="tl-item">
+          <span class="tl-dot"></span>
+          <div class="tl-time">11-13 22:08:11</div>
+          <div class="tl-title">从 0 搭建私有化向量检索服务<span class="tl-cat">AI 前沿</span></div>
+        </div>
+        <div class="tl-item">
+          <span class="tl-dot"></span>
+          <div class="tl-time">11-13 14:31:26</div>
+          <div class="tl-title">权限系统设计：从 RBAC 到行级权限<span class="tl-cat">后端架构</span></div>
+        </div>
+        <div class="tl-item">
+          <span class="tl-dot"></span>
+          <div class="tl-time">11-12 20:55:44</div>
+          <div class="tl-title">内容站 SEO 实操：收录翻倍<span class="tl-cat">运营增长</span></div>
+        </div>
+        <div class="tl-item">
+          <span class="tl-dot"></span>
+          <div class="tl-time">11-12 09:17:09</div>
+          <div class="tl-title">TypeScript 类型体操的度<span class="tl-cat">前端开发</span></div>
+        </div>
+        <div class="tl-item">
+          <span class="tl-dot"></span>
+          <div class="tl-time">11-11 16:42:37</div>
+          <div class="tl-title">灰度发布实践：逐步放量<span class="tl-cat">运维部署</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 方案 3 ========== -->
+  <div class="scheme">
+    <div class="scheme-tag"><span class="no">3</span><h2>小方图列表 · 双列</h2></div>
+    <p class="scheme-desc">保留图但缩小成 96×72 小方图（4:3），右侧标题两行 + 分类/时间。有图有文，卡片高度只有现在的一半。</p>
+    <div class="pros">
+      <span>有图、视觉不单调</span><span>卡片矮、密度高</span><span>与精选推荐区分开</span>
+      <span class="con">小图裁剪比大图更明显</span>
+    </div>
+    <div class="thumb-grid">
+      <div class="thumb-card">
+        <div class="thumb-pic"><span class="cat">前端开发</span></div>
+        <div class="thumb-body">
+          <div class="thumb-title">Vite 7 构建性能调优实录：从 42s 到 9s 的完整过程</div>
+          <div class="thumb-meta"><span>11-16 09:24</span><span>640 阅读</span></div>
+        </div>
+      </div>
+      <div class="thumb-card">
+        <div class="thumb-pic ph"><span class="cat">数据库</span></div>
+        <div class="thumb-body">
+          <div class="thumb-title">InnoDB 缓冲池调优：2G 小内存服务器上的生存指南</div>
+          <div class="thumb-meta"><span>11-15 18:03</span><span>512 阅读</span></div>
+        </div>
+      </div>
+      <div class="thumb-card">
+        <div class="thumb-pic ph"><span class="cat">AI 前沿</span></div>
+        <div class="thumb-body">
+          <div class="thumb-title">DeepSeek 重磅开源超级 Agent，一键生成完整应用</div>
+          <div class="thumb-meta"><span>11-15 10:27</span><span>470 阅读</span></div>
+        </div>
+      </div>
+      <div class="thumb-card">
+        <div class="thumb-pic"><span class="cat">运维部署</span></div>
+        <div class="thumb-body">
+          <div class="thumb-title">Nginx 反向代理超时配置排查：一个 502 引发的三层坑</div>
+          <div class="thumb-meta"><span>11-14 21:45</span><span>388 阅读</span></div>
+        </div>
+      </div>
+      <div class="thumb-card">
+        <div class="thumb-pic ph"><span class="cat">前端开发</span></div>
+        <div class="thumb-body">
+          <div class="thumb-title">React Server Components 落地半年后的真实体验</div>
+          <div class="thumb-meta"><span>11-14 15:12</span><span>356 阅读</span></div>
+        </div>
+      </div>
+      <div class="thumb-card">
+        <div class="thumb-pic"><span class="cat">AI 前沿</span></div>
+        <div class="thumb-body">
+          <div class="thumb-title">从 0 搭建私有化向量检索服务的踩坑笔记</div>
+          <div class="thumb-meta"><span>11-13 11:38</span><span>301 阅读</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 方案 4 ========== -->
+  <div class="scheme">
+    <div class="scheme-tag"><span class="no">4</span><h2>榜单行 · 缩略图 + 摘要（参考图复刻）</h2></div>
+    <p class="scheme-desc">照你给的参考图做的：左侧缩略图 + 排名徽章（1-3 名红橙金，4 名后深灰）、中间大标题 + 分类标签 + 两行摘要、右侧浏览量大数字 + 「次浏览」小字，行间细线分隔。单列 10 条，信息最丰富。</p>
+    <div class="pros">
+      <span>有图有摘要</span><span>排行榜视觉张力强</span><span>信息量最大</span><span>字段全部真实存在</span>
+      <span class="con">整块最高，但值得</span>
+    </div>
+    <div class="board">
+      <div class="board-row">
+        <div class="board-pic"></div>
+        <div class="board-main">
+          <div class="board-title-row">
+            <span class="board-title">Vite 7 构建性能调优实录：从 42s 到 9s 的完整过程</span>
+            <span class="board-tag">前端开发</span>
+          </div>
+          <div class="board-sum">升级到 Vite 7 后首屏构建时间从 42 秒降到 9 秒，本文完整复盘了依赖预构建、插件并行化与缓存策略三处关键改造，附可直接复用的配置。</div>
+          <div class="board-more">阅读全文 ›</div>
+        </div>
+        <div class="board-time"><b>2026-11-16</b><span>09:24:15</span></div>
+      </div>
+
+      <div class="board-row">
+        <div class="board-pic ph"></div>
+        <div class="board-main">
+          <div class="board-title-row">
+            <span class="board-title">InnoDB 缓冲池调优：2G 小内存服务器上的生存指南</span>
+            <span class="board-tag">数据库</span>
+          </div>
+          <div class="board-sum">内存只有 2G 的机器跑 MySQL，缓冲池怎么配才不会 OOM？从参数计算、脏页刷盘到慢查询治理，给出了一套可直接落地的组合配置。</div>
+          <div class="board-more">阅读全文 ›</div>
+        </div>
+        <div class="board-time"><b>2026-11-15</b><span>18:03:42</span></div>
+      </div>
+
+      <div class="board-row">
+        <div class="board-pic ph"></div>
+        <div class="board-main">
+          <div class="board-title-row">
+            <span class="board-title">DeepSeek 重磅开源超级 Agent，一键生成完整应用</span>
+            <span class="board-tag">AI 前沿</span>
+          </div>
+          <div class="board-sum">新开源的 Agent 框架支持从需求描述直接生成可运行的全栈应用，内置数据库建模、接口编排与前端页面生成，本地部署只需一条命令。</div>
+          <div class="board-more">阅读全文 ›</div>
+        </div>
+        <div class="board-time"><b>2026-11-15</b><span>10:27:08</span></div>
+      </div>
+
+      <div class="board-row">
+        <div class="board-pic"></div>
+        <div class="board-main">
+          <div class="board-title-row">
+            <span class="board-title">Nginx 反向代理超时配置排查：一个 502 引发的三层坑</span>
+            <span class="board-tag">运维部署</span>
+          </div>
+          <div class="board-sum">线上偶发 502，从 Nginx 到 PHP-FPM 逐层排查，最终定位到 upstream 超时、keepalive 复用与 fastcgi 缓冲三处配置叠加，附最终配置。</div>
+          <div class="board-more">阅读全文 ›</div>
+        </div>
+        <div class="board-time"><b>2026-11-14</b><span>21:45:33</span></div>
+      </div>
+
+      <div class="board-row">
+        <div class="board-pic ph"></div>
+        <div class="board-main">
+          <div class="board-title-row">
+            <span class="board-title">React Server Components 落地半年后的真实体验</span>
+            <span class="board-tag">前端开发</span>
+          </div>
+          <div class="board-sum">团队把核心业务页面迁移到 RSC 半年，首屏 JS 体积下降 63%，但也踩了数据获取边界、客户端状态共享与调试链路的坑，逐条复盘。</div>
+          <div class="board-more">阅读全文 ›</div>
+        </div>
+        <div class="board-time"><b>2026-11-14</b><span>15:12:50</span></div>
+      </div>
+
+      <div class="board-row">
+        <div class="board-pic"></div>
+        <div class="board-main">
+          <div class="board-title-row">
+            <span class="board-title">从 0 搭建私有化向量检索服务的踩坑笔记</span>
+            <span class="board-tag">AI 前沿</span>
+          </div>
+          <div class="board-sum">用开源模型 + 本地向量库搭一套私有检索：embedding 选型、分块策略、召回率调优与批量索引的工程细节，全部整理成清单。</div>
+          <div class="board-more">阅读全文 ›</div>
+        </div>
+        <div class="board-time"><b>2026-11-13</b><span>11:38:21</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <h3>对比一览</h3>
+    <table>
+      <tr><th>方案</th><th>有没有图</th><th>10 条的整块高度</th><th>适合的场景</th></tr>
+      <tr><td><b>1 · 报刊行</b></td><td>无</td><td>最矮</td><td>追求信息密度、官方媒体感</td></tr>
+      <tr><td><b>2 · 时间轴</b></td><td>无</td><td>中等</td><td>强调「刚刚更新」的时效感</td></tr>
+      <tr><td><b>3 · 小方图</b></td><td>有（小）</td><td>中等</td><td>兼顾视觉与密度，最均衡</td></tr>
+      <tr><td><b>4 · 榜单行</b></td><td>有（小）+ 摘要</td><td>最高</td><td>信息最丰富，榜单感强（参考图复刻）</td></tr>
+      <tr><td>现状</td><td>有（大）</td><td>较高</td><td>图片驱动的内容站</td></tr>
+    </table>
+    <p style="margin-top:12px;font-size:13px;color:var(--ink-2);">悬停各条目可以看到 hover 效果（和实际实现一致）。回复「方案 1 / 2 / 3 / 4」即可，也可以混搭（比如「方案 4 但不要右侧浏览量」）。</p>
+  </div>
+
+</div>
+</body>
+</html>

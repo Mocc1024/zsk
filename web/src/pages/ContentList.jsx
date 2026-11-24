@@ -5,8 +5,10 @@ import {
   Card,
   DatePicker,
   Dropdown,
+  Empty,
   Form,
   Input,
+  Modal,
   Popconfirm,
   Select,
   Space,
@@ -22,12 +24,13 @@ import {
   DownOutlined,
   EditOutlined,
   ExportOutlined,
+  MessageOutlined,
   PlusOutlined,
   PushpinOutlined,
   ReloadOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { categoryApi, contentApi, tagApi } from '../api';
+import { categoryApi, commentAuditApi, contentApi, tagApi } from '../api';
 import { useAuth } from '../store/AuthContext';
 import { CONTENT_STATUS, contentStatusColor, contentStatusLabel } from '../utils/constants';
 
@@ -62,6 +65,8 @@ export default function ContentList() {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  // 正在管理评论的内容行：非空时弹出该文章的评论管理弹窗
+  const [commentRow, setCommentRow] = useState(null);
   // 首屏就带上 URL 上的状态筛选。若挪到 useEffect 里补，
   // 会先按「未筛选」请求一次、再按筛选请求一次，页面闪一下全部列表才变成草稿。
   const urlStatus = readUrlStatus(searchParams);
@@ -208,25 +213,41 @@ export default function ContentList() {
           // 免得从后台跳走后还得点回来。
           const viewable = Number(record.status) === 1;
 
+          // flex 布局：「置顶」标签不收缩，标题占剩余宽度，超出显示省略号。
+          // 不用 antd 的 Space——它给子项包的 wrapper 不会收缩（min-width: auto），
+          // 长标题会把单元格撑爆后被硬裁，没有省略号。
+          const titleStyle = {
+            flex: '1 1 auto',
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          };
+
           return (
-            <Space size={6}>
-              {record.is_top === 1 && <Tag color="volcano">置顶</Tag>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              {record.is_top === 1 && (
+                <Tag color="volcano" style={{ flex: '0 0 auto' }}>
+                  置顶
+                </Tag>
+              )}
               {viewable ? (
                 <a
                   href={frontUrl(record.id)}
                   target="_blank"
                   rel="noreferrer"
                   title={`${text}（在前台查看）`}
+                  style={titleStyle}
                 >
                   {text}
                 </a>
               ) : (
                 // 草稿 / 已下架在前台查不到，给了链接点过去只会看到「内容不存在」
                 <Tooltip title="未发布，前台暂不可见">
-                  <span style={{ color: '#8c8c8c' }}>{text}</span>
+                  <span style={{ ...titleStyle, color: '#8c8c8c' }}>{text}</span>
                 </Tooltip>
               )}
-            </Space>
+            </div>
           );
         },
       },
@@ -240,18 +261,18 @@ export default function ContentList() {
       {
         title: '标签',
         dataIndex: 'tags',
-        width: 180,
+        width: 260,
         render: (values) => {
           const names = Array.isArray(values) ? values : [];
           if (!names.length) return <span style={{ color: '#bfbfbf' }}>—</span>;
+          // 全部展示不折叠：超出列宽时自动换行，行高随标签数量自适应
           return (
             <Space size={4} wrap>
-              {names.slice(0, 3).map((name) => (
+              {names.map((name) => (
                 <Tag key={name} color="blue">
                   {name}
                 </Tag>
               ))}
-              {names.length > 3 && <Tag>+{names.length - 3}</Tag>}
             </Space>
           );
         },
@@ -271,7 +292,7 @@ export default function ContentList() {
       {
         title: '操作',
         key: 'action',
-        width: 400,
+        width: 440,
         fixed: 'right',
         render: (_, record) => (
           <Space size={0} style={{ flexWrap: 'nowrap' }}>
@@ -283,6 +304,16 @@ export default function ContentList() {
                 onClick={() => navigate(`/content/edit/${record.id}`)}
               >
                 编辑
+              </Button>
+            )}
+            {hasPermission('comment.list') && (
+              <Button
+                type="link"
+                size="small"
+                icon={<MessageOutlined />}
+                onClick={() => setCommentRow(record)}
+              >
+                评论
               </Button>
             )}
             {hasPermission('content.status') && (
@@ -466,6 +497,182 @@ export default function ContentList() {
           }}
         />
       </Card>
+
+      {/* 单篇文章的评论管理：查看 / 编辑 / 删除 */}
+      <ContentCommentsModal row={commentRow} onClose={() => setCommentRow(null)} />
     </div>
+  );
+}
+
+/* ---------------- 文章评论管理弹窗 ---------------- */
+
+/** 评论状态文案，与评论审核页一致 */
+const COMMENT_STATUS = { 0: '待审核', 1: '已通过', 2: '已驳回' };
+
+function ContentCommentsModal({ row, onClose }) {
+  const [list, setList] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [keyword, setKeyword] = useState('');
+  const [loading, setLoading] = useState(false);
+  // 正在编辑的评论行；非空时弹出编辑框
+  const [editing, setEditing] = useState(null);
+  const [editText, setEditText] = useState('');
+
+  // row 为 null（弹窗关闭）时 hook 照常执行但不发请求
+  const loadList = useCallback(async () => {
+    if (!row) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await commentAuditApi.list({ page, limit: 10, content_id: row.id, keyword });
+      setList(res.data.list || []);
+      setTotal(res.data.total || 0);
+    } catch (e) {
+      // 错误提示已由拦截器统一处理
+    } finally {
+      setLoading(false);
+    }
+  }, [page, row, keyword]);
+
+  useEffect(() => {
+    loadList();
+  }, [loadList]);
+
+  // 切换文章（含重新打开弹窗）时重置页码与搜索词，避免上一篇文章的筛选状态串场
+  const rowId = row?.id;
+  useEffect(() => {
+    setPage(1);
+    setKeyword('');
+  }, [rowId]);
+
+  const saveEdit = async () => {
+    if (!editText.trim()) {
+      message.warning('评论内容不能为空');
+      return;
+    }
+    try {
+      await commentAuditApi.update(editing.id, editText);
+      message.success('已保存');
+      setEditing(null);
+      loadList();
+    } catch (e) {
+      // 错误提示已由拦截器统一处理
+    }
+  };
+
+  const remove = async (record) => {
+    try {
+      await commentAuditApi.remove(record.id);
+      message.success('已删除');
+      loadList();
+    } catch (e) {
+      // 错误提示已由拦截器统一处理
+    }
+  };
+
+  const columns = [
+    { title: '评论内容', dataIndex: 'content', ellipsis: true },
+    { title: '用户', dataIndex: 'nickname', width: 100, ellipsis: true },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      width: 84,
+      render: (v) => {
+        const map = { 0: ['orange', '待审核'], 1: ['green', '已通过'], 2: ['red', '已驳回'] };
+        const [color, text] = map[v] || ['default', v];
+        return <Tag color={color}>{text}</Tag>;
+      },
+    },
+    { title: '时间', dataIndex: 'create_time', width: 150 },
+    {
+      title: '操作',
+      key: 'action',
+      width: 120,
+      render: (_, record) => (
+        <Space size={0}>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              setEditing(record);
+              setEditText(record.content);
+            }}
+          >
+            编辑
+          </Button>
+          <Popconfirm title="确认删除该评论？" okText="删除" cancelText="取消" onConfirm={() => remove(record)}>
+            <Button type="link" size="small" danger>
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      {/* 评论列表弹窗 */}
+      <Modal
+        title={row ? `评论管理：${row.title}` : '评论管理'}
+        open={!!row}
+        onCancel={() => {
+          onClose();
+          setKeyword('');
+          setPage(1);
+        }}
+        footer={null}
+        width={760}
+        destroyOnClose
+      >
+        <Input.Search
+          placeholder="搜索评论内容或用户昵称"
+          allowClear
+          style={{ marginBottom: 12 }}
+          onSearch={(v) => {
+            setKeyword(v.trim());
+            setPage(1);
+          }}
+        />
+        <Table
+          rowKey="id"
+          size="middle"
+          loading={loading}
+          columns={columns}
+          dataSource={list}
+          locale={{ emptyText: <Empty description="没有符合条件的评论" /> }}
+          pagination={{
+            current: page,
+            pageSize: 10,
+            total,
+            showTotal: (t) => `共 ${t} 条`,
+            onChange: setPage,
+          }}
+        />
+      </Modal>
+
+      {/* 编辑弹窗：与列表弹窗同级渲染，避免嵌套遮罩叠加 */}
+      <Modal
+        title="编辑评论"
+        open={!!editing}
+        onOk={saveEdit}
+        onCancel={() => setEditing(null)}
+        okText="保存"
+        cancelText="取消"
+        destroyOnClose
+      >
+        <Input.TextArea
+          rows={4}
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          maxLength={2000}
+          showCount
+          style={{ marginBottom: 8 }}
+          placeholder="修正后的评论内容（保存后前台立即生效）"
+        />
+      </Modal>
+    </>
   );
 }

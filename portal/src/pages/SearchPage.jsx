@@ -66,7 +66,9 @@ export default function SearchPage() {
         <h1 className="page-head-title">
           {keyword ? `搜索：${keyword}` : '搜索'}
         </h1>
-        <p className="page-head-desc">支持标题、摘要与正文关键词；正文由全文索引匹配，最少两个字。</p>
+        <p className="page-head-desc">
+          支持标题、摘要与正文关键词；输入「#标签名」可按标签搜索，正文由全文索引匹配，最少两个字。
+        </p>
       </div>
 
       <form className="card" onSubmit={submit} style={{ marginBottom: 20 }}>
@@ -75,7 +77,7 @@ export default function SearchPage() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="输入关键词，回车搜索"
+              placeholder="输入关键词或 #标签名，回车搜索"
               aria-label="搜索关键词"
             />
           </div>

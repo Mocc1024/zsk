@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bookmark,
   ChevronDown,
+  Construction,
   LogOut,
   Menu,
   Moon,
@@ -11,9 +12,11 @@ import {
   User as UserIcon,
   X,
 } from 'lucide-react';
-import { frontApi } from '../api';
 import { useUserAuth } from '../store/UserAuthContext';
 import logoMark from '../assets/logo.svg';
+
+/** 待开发板块：只做入口展示，点击弹「正预备开放中」提示，不注册路由 */
+const SOON_PLATES = ['活动福利', '进来玩玩', 'AI实验室'];
 
 /** 主题：跟随系统，手动切换后记住选择 */
 function ThemeToggle() {
@@ -47,26 +50,13 @@ function ThemeToggle() {
  */
 export default function BasicLayout() {
   const [keyword, setKeyword] = useState('');
-  const [categories, setCategories] = useState([]);
+  const [soonPlate, setSoonPlate] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { isLogin, user, logout } = useUserAuth();
   const userMenuRef = useRef(null);
-
-  useEffect(() => {
-    let alive = true;
-    frontApi
-      .categories()
-      .then((res) => alive && setCategories(res.data.list || []))
-      .catch(() => {
-        // 导航取不到不影响主内容，静默降级为只有「首页」
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   // 路由变化后收起移动端菜单与用户菜单
   useEffect(() => {
@@ -101,14 +91,15 @@ export default function BasicLayout() {
       <Link to="/" className={isActive('/') ? 'nav-link active' : 'nav-link'}>
         首页
       </Link>
-      {categories.slice(0, 6).map((cat) => (
-        <Link
-          key={cat.id}
-          to={`/category/${cat.id}`}
-          className={isActive(`/category/${cat.id}`) ? 'nav-link active' : 'nav-link'}
+      {SOON_PLATES.map((name) => (
+        <button
+          key={name}
+          type="button"
+          className="nav-link nav-soon"
+          onClick={() => setSoonPlate(name)}
         >
-          {cat.name}
-        </Link>
+          {name}
+        </button>
       ))}
     </>
   );
@@ -234,8 +225,7 @@ export default function BasicLayout() {
           </div>
           <div className="footer-copy">
             © {new Date().getFullYear()} MCYY 知识库 · 内容仅供研究参考
-            {/* ICP 备案号：大陆服务器托管属管局硬性要求，会不定期抽查。
-                通过公安备案后，在此处再追加公安备案号及 beian.gov.cn 链接。 */}
+            {/* ICP 备案号：大陆服务器托管属管局硬性要求，会不定期抽查 */}
             <a
               href="https://beian.miit.gov.cn/"
               target="_blank"
@@ -244,9 +234,39 @@ export default function BasicLayout() {
             >
               浙ICP备2026047213号-2
             </a>
+            {/* 公安联网备案：图标用公安部备案系统官方图，链接指向该备案号的官方查询页 */}
+            <a
+              href="https://beian.mps.gov.cn/#/query/webSearch?code=33010202006522"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-police"
+            >
+              <img
+                src="https://beian.mps.gov.cn/img/logo01.dd7ff50e.png"
+                alt="公安备案"
+                loading="lazy"
+              />
+              浙公网安备33010202006522号
+            </a>
           </div>
         </div>
       </footer>
+
+      {/* 占位板块提示框：点击遮罩或按钮关闭，不注册任何路由 */}
+      {soonPlate ? (
+        <div className="soon-mask" onClick={() => setSoonPlate('')} role="dialog" aria-modal="true">
+          <div className="soon-modal" onClick={(e) => e.stopPropagation()}>
+            <span className="soon-ico">
+              <Construction size={26} />
+            </span>
+            <p className="soon-title">正预备开放中</p>
+            <p className="soon-desc">「{soonPlate}」板块正在筹备，敬请期待</p>
+            <button type="button" className="btn btn-primary" onClick={() => setSoonPlate('')}>
+              我知道了
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -44,8 +44,8 @@ INSERT INTO `zsk_auth_rule` (`id`, `pid`, `type`, `title`, `name`, `path`, `icon
 (108, 100, 2, '查看等级规则', 'level.list',          '',            '',                 3, 1, NOW(), NOW()),
 (109, 100, 2, '新增等级',     'level.create',        '',            '',                 2, 1, NOW(), NOW()),
 (110, 100, 2, '编辑等级',     'level.update',        '',            '',                 1, 1, NOW(), NOW()),
--- 互动管理（顶级菜单）
-(120, 0,  1, '互动管理',     'interact',            '/interact',   'MessageOutlined', 64, 1, NOW(), NOW()),
+-- 互动管理（内容管理的子菜单，2026.11 由顶级挪入，先例 upgrade_menu_interact_sub.sql）
+(120, 20,  1, '互动管理',     'interact',            '/interact',   'MessageOutlined', 27, 1, NOW(), NOW()),
 (121, 120, 2, '查看评论',     'comment.list',        '',            '',                10, 1, NOW(), NOW()),
 (122, 120, 2, '评论审核',     'comment.audit',       '',            '',                 9, 1, NOW(), NOW()),
 (123, 120, 2, '删除评论',     'comment.delete',      '',            '',                 8, 1, NOW(), NOW()),

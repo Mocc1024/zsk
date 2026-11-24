@@ -29,7 +29,65 @@ class SensitiveWordService
     public const LEVEL_BLOCK = 3;
 
     /**
-     * 过滤一段文本
+     * 只检测不替换：用于发表评论时判断是否命中拦截级。
+     *
+     * 原文完整入库——替换级（2 级）不做物理改写，由 display() 在
+     * 前台展示时替换，库里始终保留原词（后台审核看到的是原文）。
+     *
+     * @return array ['blocked' => 是否需要拦截, 'hits' => 命中的词]
+     */
+    public static function detect(string $text): array
+    {
+        $words   = self::words();
+        $hits    = [];
+        $blocked = false;
+
+        foreach ($words as $item) {
+            $word = (string) $item['word'];
+            if ($word === '' || !str_contains($text, $word)) {
+                continue;
+            }
+
+            $hits[] = $word;
+            if ((int) $item['level'] === self::LEVEL_BLOCK) {
+                $blocked = true;
+            }
+        }
+
+        return ['blocked' => $blocked, 'hits' => array_values(array_unique($hits))];
+    }
+
+    /**
+     * 展示层替换：把替换级（2 级）命中的词换成替换文本，只动输出不动库。
+     *
+     * 拦截级（3 级）命中的评论会被转待审，正常不该出现在前台；
+     * 但词库是动态维护的——已通过的评论可能在词库后来加入拦截词，
+     * 展示层对 3 级命中同样兜底替换，避免漏网。
+     */
+    public static function display(string $text): string
+    {
+        $words = self::words();
+        if (!$words) {
+            return $text;
+        }
+
+        foreach ($words as $item) {
+            $word  = (string) $item['word'];
+            $level = (int) $item['level'];
+            if ($word === '' || ($level !== self::LEVEL_REPLACE && $level !== self::LEVEL_BLOCK)) {
+                continue;
+            }
+            if (!str_contains($text, $word)) {
+                continue;
+            }
+            $text = str_replace($word, (string) $item['replacement'], $text);
+        }
+
+        return $text;
+    }
+
+    /**
+     * 过滤一段文本（已废弃于评论链路：入库不再物理替换，改用 detect + display）
      *
      * @return array ['text' => 处理后文本, 'blocked' => 是否需要拦截, 'hits' => 命中的词]
      */

@@ -187,7 +187,7 @@ export default function ContentDetail() {
         {Array.isArray(detail.tags) && detail.tags.length ? (
           <div className="article-tags">
             {detail.tags.map((tag) => (
-              <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}`} className="tag-link">
+              <Link key={tag} to={`/search?q=${encodeURIComponent('#' + tag)}`} className="tag-link">
                 #{tag}
               </Link>
             ))}

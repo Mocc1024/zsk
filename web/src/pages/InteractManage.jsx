@@ -96,6 +96,25 @@ function CommentAudit() {
     }
   };
 
+  // 编辑评论内容：管理员修正措辞 / 清理违规字句
+  const [editing, setEditing] = useState(null);
+  const [editText, setEditText] = useState('');
+
+  const saveEdit = async () => {
+    if (!editText.trim()) {
+      message.warning('评论内容不能为空');
+      return;
+    }
+    try {
+      await commentAuditApi.update(editing.id, editText);
+      message.success('已保存');
+      setEditing(null);
+      loadList();
+    } catch (e) {
+      // 错误提示已由拦截器统一处理
+    }
+  };
+
   const remove = async (row) => {
     try {
       await commentAuditApi.remove(row.id);
@@ -124,7 +143,7 @@ function CommentAudit() {
     {
       title: '操作',
       key: 'action',
-      width: 180,
+      width: 220,
       render: (_, row) => (
         <Space size={4}>
           {Number(row.status) !== 1 && (
@@ -137,6 +156,16 @@ function CommentAudit() {
               驳回
             </Button>
           )}
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              setEditing(row);
+              setEditText(row.content);
+            }}
+          >
+            编辑
+          </Button>
           <Popconfirm title="确认删除该评论？" okText="删除" cancelText="取消" onConfirm={() => remove(row)}>
             <Button type="link" size="small" danger>
               删除
@@ -194,6 +223,26 @@ function CommentAudit() {
           },
         }}
       />
+
+      <Modal
+        title="编辑评论"
+        open={!!editing}
+        onOk={saveEdit}
+        onCancel={() => setEditing(null)}
+        okText="保存"
+        cancelText="取消"
+        destroyOnClose
+      >
+        <Input.TextArea
+          rows={4}
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          maxLength={2000}
+          showCount
+          style={{ marginBottom: 8 }}
+          placeholder="修正后的评论内容（保存后前台立即生效）"
+        />
+      </Modal>
     </>
   );
 }
@@ -417,7 +466,9 @@ function SensitiveWords() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [adding, setAdding] = useState(false);
+  // 表单弹窗状态：editingWord 为 null 表示新增，为对象表示编辑该词
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingWord, setEditingWord] = useState(null);
   const [form] = Form.useForm();
 
   const loadList = useCallback(async () => {
@@ -437,12 +488,27 @@ function SensitiveWords() {
     loadList();
   }, [loadList]);
 
+  const openCreate = () => {
+    setEditingWord(null);
+    setFormOpen(true);
+    form.setFieldsValue({ word: '', level: 2, replacement: '***' });
+  };
+
+  const openEdit = (row) => {
+    setEditingWord(row);
+    setFormOpen(true);
+    form.setFieldsValue({ word: row.word, level: Number(row.level), replacement: row.replacement });
+  };
+
   const submit = async () => {
     const values = await form.validateFields();
     try {
-      const res = await sensitiveApi.create(values);
-      message.success(res.msg || '已新增');
-      setAdding(false);
+      const res = editingWord
+        ? await sensitiveApi.update(editingWord.id, values)
+        : await sensitiveApi.create(values);
+      message.success(editingWord ? res.msg || '已保存' : res.msg || '已新增');
+      setFormOpen(false);
+      setEditingWord(null);
       loadList();
     } catch (e) {
       // 错误提示已由拦截器统一处理
@@ -475,20 +541,25 @@ function SensitiveWords() {
     {
       title: '操作',
       key: 'action',
-      width: 100,
+      width: 120,
       render: (_, row) => (
-        <Popconfirm title="确认删除该敏感词？" okText="删除" cancelText="取消" onConfirm={() => remove(row)}>
-          <Button type="link" size="small" danger>
-            删除
+        <Space size={0}>
+          <Button type="link" size="small" onClick={() => openEdit(row)}>
+            编辑
           </Button>
-        </Popconfirm>
+          <Popconfirm title="确认删除该敏感词？" okText="删除" cancelText="取消" onConfirm={() => remove(row)}>
+            <Button type="link" size="small" danger>
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
 
   return (
     <>
-      <Button type="primary" style={{ marginBottom: 16 }} onClick={() => setAdding(true)}>
+      <Button type="primary" style={{ marginBottom: 16 }} onClick={openCreate}>
         新增敏感词
       </Button>
       <Table
@@ -501,18 +572,27 @@ function SensitiveWords() {
         locale={{ emptyText: <Empty description="词库为空" /> }}
       />
 
+      {/* 新增 / 编辑共用一个弹窗，编辑时词语单值、不再支持批量分隔 */}
       <Modal
-        title="新增敏感词"
-        open={adding}
-        onCancel={() => setAdding(false)}
+        title={editingWord ? '编辑敏感词' : '新增敏感词'}
+        open={formOpen}
+        onCancel={() => {
+          setFormOpen(false);
+          setEditingWord(null);
+        }}
         onOk={submit}
-        okText="提交"
+        okText={editingWord ? '保存' : '提交'}
         cancelText="取消"
         destroyOnClose
       >
         <Form form={form} layout="vertical" preserve={false} initialValues={{ level: 2, replacement: '***' }}>
-          <Form.Item name="word" label="词语" extra="支持批量：用逗号或空格分隔，一次性可加多个" rules={[{ required: true, message: '请输入词语' }]}>
-            <Input.TextArea rows={3} />
+          <Form.Item
+            name="word"
+            label="词语"
+            extra={editingWord ? '修改后的词语在保存后立即生效' : '支持批量：用逗号或空格分隔，一次性可加多个'}
+            rules={[{ required: true, message: '请输入词语' }]}
+          >
+            {editingWord ? <Input maxLength={50} /> : <Input.TextArea rows={3} />}
           </Form.Item>
           <Form.Item name="level" label="处理级别">
             <select style={{ height: 32, width: '100%', borderRadius: 6, border: '1px solid #d9d9d9' }}>

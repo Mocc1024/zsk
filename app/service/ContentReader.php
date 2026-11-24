@@ -70,9 +70,15 @@ class ContentReader
 
         if (($params['is_top'] ?? '') !== '' && (int) $params['is_top'] === 1) {
             $query->where('c.is_top', 1);
+            // 置顶列表（首页「精选推荐」）按内容排序值排：越大越前（后台编辑表单可填）
+            $query->order('c.sort', 'desc');
         }
 
-        $query->order('c.is_top', 'desc');
+        // 传 no_top_first=1 时跳过「置顶前置」：首页「最新资讯」要求纯发布时间倒序，
+        // 分类页/搜索页等其他调用方不传该参数、保持置顶前置的原有行为
+        if (empty($params['no_top_first'])) {
+            $query->order('c.is_top', 'desc');
+        }
         if ((string) ($params['sort'] ?? '') === 'hot') {
             $query->order('c.views', 'desc');
         }
@@ -92,6 +98,30 @@ class ContentReader
         $keyword = trim($keyword);
         if ($keyword === '') {
             return ['list' => [], 'total' => 0, 'page' => $page, 'pageSize' => $limit];
+        }
+
+        // 「#标签名」= 标签搜索：详情页标签与手动输入「#xxx」都走这里，
+        // 按标签名模糊匹配出 tag，再取关联内容 ID 过滤，发布时间倒序
+        if (str_starts_with($keyword, '#')) {
+            $tagName = trim(mb_substr($keyword, 1, null, 'UTF-8'));
+            if ($tagName === '') {
+                return ['list' => [], 'total' => 0, 'page' => $page, 'pageSize' => $limit];
+            }
+
+            $tagIds = Db::name('tag')
+                ->whereNull('delete_time')
+                ->where('name', 'like', '%' . $tagName . '%')
+                ->column('id');
+
+            $contentIds = $tagIds
+                ? array_map('intval', Db::name('content_tag')->whereIn('tag_id', $tagIds)->column('content_id'))
+                : [];
+
+            $query = self::scope()->field(self::LIST_FIELDS);
+            $query->whereIn('c.id', $contentIds ?: [0]);
+            $query->order('c.publish_time', 'desc');
+
+            return self::paginate($query, $page, $limit);
         }
 
         $query = self::scope()->field(self::LIST_FIELDS);

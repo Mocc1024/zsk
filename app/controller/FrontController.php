@@ -30,10 +30,12 @@ class FrontController extends BaseController
         // 首页是访问量最大的接口，四个区块一次聚合后整体缓存
         $data = ContentCache::remember('home', function () {
             return [
-                // 置顶上限 12：第 1 条做首页头条，2~4 条做头条侧栏，其余进「置顶推荐」网格
+                // 置顶上限 12：首页「精选推荐」板块展示
                 'top'        => ContentReader::listForApi(['is_top' => 1, 'sort' => 'latest'], 1, 12)['list'],
-                'latest'     => ContentReader::listForApi(['sort' => 'latest'], 1, 10)['list'],
-                'hot'        => ContentReader::listForApi(['sort' => 'hot'], 1, 10)['list'],
+                // 首页「最新资讯」要求纯发布时间倒序，置顶不提前（no_top_first 见 ContentReader::listForApi）
+                'latest'     => ContentReader::listForApi(['sort' => 'latest', 'no_top_first' => 1], 1, 10)['list'],
+                // 热门榜纯按浏览量倒序，置顶不参与加权（no_top_first 见 ContentReader::listForApi）
+                'hot'        => ContentReader::listForApi(['sort' => 'hot', 'no_top_first' => 1], 1, 10)['list'],
                 'categories' => self::categoryNav(),
             ];
         });
