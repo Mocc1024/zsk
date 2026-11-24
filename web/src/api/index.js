@@ -186,6 +186,68 @@ export const groupApi = {
   authorize: (id, rules) => request.put(`/group/${id}/rules`, { rules }),
 };
 
+/** 全民健身 - 统计管理 */
+export const fitnessStatApi = {
+  list: (params) => request.get('/fitness/stat', { params }),
+};
+
+/** 全民健身 - 门店管理 */
+export const fitnessStoreApi = {
+  list: (params) => request.get('/fitness/store', { params }),
+  options: () => request.get('/fitness/store/options'),
+  create: (data) => request.post('/fitness/store', data),
+  update: (id, data) => request.put(`/fitness/store/${id}`, data),
+  restore: (id) => request.put(`/fitness/store/${id}/restore`),
+  remove: (id) => request.delete(`/fitness/store/${id}`),
+};
+
+/** 全民健身 - 教练管理 */
+export const fitnessCoachApi = {
+  list: (params) => request.get('/fitness/coach', { params }),
+  options: () => request.get('/fitness/coach/options'),
+  students: (params) => request.get('/fitness/coach/students', { params }),
+  detail: (id) => request.get(`/fitness/coach/${id}`),
+  create: (data) => request.post('/fitness/coach', data),
+  update: (id, data) => request.put(`/fitness/coach/${id}`, data),
+  bindStore: (id, storeId) => request.put(`/fitness/coach/${id}/store`, { store_id: storeId }),
+  bindStudents: (id, memberIds) => request.put(`/fitness/coach/${id}/students`, { member_ids: memberIds }),
+  performance: (id, data) => request.post(`/fitness/coach/${id}/performance`, data),
+  boundStudents: (id) => request.get(`/fitness/coach/${id}/bound-students`),
+  performanceList: (id, params) => request.get(`/fitness/coach/${id}/performance`, { params }),
+  performanceReverse: (id) => request.post('/fitness/coach/performance-reverse', { id }),
+  resign: (id) => request.post(`/fitness/coach/${id}/resign`),
+  restore: (id) => request.post(`/fitness/coach/${id}/restore`),
+};
+
+/** 全民健身 - 会员管理 */
+export const fitnessMemberApi = {
+  list: (params) => request.get('/fitness/member', { params }),
+  detail: (id) => request.get(`/fitness/member/${id}`),
+  create: (data) => request.post('/fitness/member', data),
+  update: (id, data) => request.put(`/fitness/member/${id}`, data),
+  remove: (id) => request.delete(`/fitness/member/${id}`),
+  restore: (id) => request.post(`/fitness/member/${id}/restore`),
+  consume: (id, data) => request.post(`/fitness/member/${id}/consume`, data),
+  consumeList: (id, params) => request.get(`/fitness/member/${id}/consume`, { params }),
+  consumeDelete: (id) => request.delete(`/fitness/member/consume/${id}`),
+  cardList: (id, params) => request.get(`/fitness/member/${id}/card`, { params }),
+  cardCreate: (id, data) => request.post(`/fitness/member/${id}/card`, data),
+  cardReverse: (id) => request.post('/fitness/member/card/reverse', { id }),
+};
+
+/** 全民健身 - 企业管理 */
+export const fitnessEnterpriseApi = {
+  list: (params) => request.get('/fitness/enterprise', { params }),
+  options: () => request.get('/fitness/enterprise/options'),
+  detail: (id) => request.get(`/fitness/enterprise/${id}`),
+  create: (data) => request.post('/fitness/enterprise', data),
+  update: (id, data) => request.put(`/fitness/enterprise/${id}`, data),
+  remove: (id) => request.delete(`/fitness/enterprise/${id}`),
+  restore: (id) => request.post(`/fitness/enterprise/${id}/restore`),
+  bindStudents: (id, memberIds) => request.put(`/fitness/enterprise/${id}/students`, { member_ids: memberIds }),
+  boundStudents: (id) => request.get(`/fitness/enterprise/${id}/students`),
+};
+
 /** 操作日志 */
 export const logApi = {
   list: (params) => request.get('/log', { params }),

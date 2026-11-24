@@ -24,6 +24,12 @@ const UserManageList = lazy(() => import('./pages/UserManageList'));
 const InteractManage = lazy(() => import('./pages/InteractManage'));
 const Security = lazy(() => import('./pages/Security'));
 const Profile = lazy(() => import('./pages/Profile'));
+// 全民健身
+const FitnessStat = lazy(() => import('./pages/fitness/FitnessStat'));
+const FitnessStore = lazy(() => import('./pages/fitness/FitnessStore'));
+const FitnessCoach = lazy(() => import('./pages/fitness/FitnessCoach'));
+const FitnessMember = lazy(() => import('./pages/fitness/FitnessMember'));
+const FitnessEnterprise = lazy(() => import('./pages/fitness/FitnessEnterprise'));
 
 /** 懒加载页面的统一加载态 */
 function PageLoading() {
@@ -80,6 +86,12 @@ function AppRoutes() {
         {/* 路径与后台菜单的 path 一致：用户管理 path = /user，互动管理 path = /interact */}
         <Route path="user" element={<UserManageList />} />
         <Route path="interact" element={<InteractManage />} />
+        {/* 全民健身：路径与后台菜单 path 一致 */}
+        <Route path="fitness/stat" element={<FitnessStat />} />
+        <Route path="fitness/store" element={<FitnessStore />} />
+        <Route path="fitness/coach" element={<FitnessCoach />} />
+        <Route path="fitness/member" element={<FitnessMember />} />
+        <Route path="fitness/enterprise" element={<FitnessEnterprise />} />
         <Route path="security" element={<Security />} />
         <Route path="profile" element={<Profile />} />
       </Route>

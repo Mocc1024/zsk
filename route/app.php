@@ -165,6 +165,59 @@ Route::group('api', function () {
         // 举报处理
         Route::get('report', '\app\controller\ReportManageController@index');
         Route::put('report/:id/handle', '\app\controller\ReportManageController@handle');
+
+        // ---- 全民健身（具体路径必须排在 :id 之前）----
+        // 统计管理
+        Route::get('fitness/stat', '\app\controller\FitnessStatController@index');
+
+        // 门店管理
+        Route::get('fitness/store/options', '\app\controller\FitnessStoreController@options');
+        Route::get('fitness/store', '\app\controller\FitnessStoreController@index');
+        Route::post('fitness/store', '\app\controller\FitnessStoreController@save');
+        Route::put('fitness/store/:id/restore', '\app\controller\FitnessStoreController@restore');
+        Route::put('fitness/store/:id', '\app\controller\FitnessStoreController@update');
+        Route::delete('fitness/store/:id', '\app\controller\FitnessStoreController@delete');
+
+        // 教练管理
+        Route::get('fitness/coach/options', '\app\controller\FitnessCoachController@options');
+        Route::get('fitness/coach/students', '\app\controller\FitnessCoachController@studentOptions');
+        Route::post('fitness/coach/performance-reverse', '\app\controller\FitnessCoachController@performanceReverse');
+        Route::get('fitness/coach', '\app\controller\FitnessCoachController@index');
+        Route::post('fitness/coach', '\app\controller\FitnessCoachController@save');
+        Route::get('fitness/coach/:id', '\app\controller\FitnessCoachController@read');
+        Route::put('fitness/coach/:id', '\app\controller\FitnessCoachController@update');
+        Route::put('fitness/coach/:id/store', '\app\controller\FitnessCoachController@bindStore');
+        Route::put('fitness/coach/:id/students', '\app\controller\FitnessCoachController@bindStudents');
+        Route::post('fitness/coach/:id/performance', '\app\controller\FitnessCoachController@performance');
+        Route::get('fitness/coach/:id/performance', '\app\controller\FitnessCoachController@performanceList');
+        Route::get('fitness/coach/:id/bound-students', '\app\controller\FitnessCoachController@boundStudents');
+        Route::post('fitness/coach/:id/resign', '\app\controller\FitnessCoachController@resign');
+        Route::post('fitness/coach/:id/restore', '\app\controller\FitnessCoachController@restore');
+
+        // 会员管理
+        Route::get('fitness/member', '\app\controller\FitnessMemberController@index');
+        Route::post('fitness/member', '\app\controller\FitnessMemberController@save');
+        Route::get('fitness/member/:id', '\app\controller\FitnessMemberController@read');
+        Route::put('fitness/member/:id', '\app\controller\FitnessMemberController@update');
+        Route::delete('fitness/member/:id', '\app\controller\FitnessMemberController@delete');
+        Route::post('fitness/member/:id/restore', '\app\controller\FitnessMemberController@restore');
+        Route::post('fitness/member/:id/consume', '\app\controller\FitnessMemberController@consume');
+        Route::get('fitness/member/:id/consume', '\app\controller\FitnessMemberController@consumeList');
+        Route::delete('fitness/member/consume/:id', '\app\controller\FitnessMemberController@consumeDelete');
+        Route::get('fitness/member/:id/card', '\app\controller\FitnessMemberController@cardList');
+        Route::post('fitness/member/:id/card', '\app\controller\FitnessMemberController@cardCreate');
+        Route::post('fitness/member/card/reverse', '\app\controller\FitnessMemberController@cardReverse');
+
+        // 企业管理
+        Route::get('fitness/enterprise/options', '\app\controller\FitnessEnterpriseController@options');
+        Route::get('fitness/enterprise', '\app\controller\FitnessEnterpriseController@index');
+        Route::post('fitness/enterprise', '\app\controller\FitnessEnterpriseController@save');
+        Route::get('fitness/enterprise/:id', '\app\controller\FitnessEnterpriseController@read');
+        Route::put('fitness/enterprise/:id', '\app\controller\FitnessEnterpriseController@update');
+        Route::delete('fitness/enterprise/:id', '\app\controller\FitnessEnterpriseController@delete');
+        Route::post('fitness/enterprise/:id/restore', '\app\controller\FitnessEnterpriseController@restore');
+        Route::put('fitness/enterprise/:id/students', '\app\controller\FitnessEnterpriseController@bindStudents');
+        Route::get('fitness/enterprise/:id/students', '\app\controller\FitnessEnterpriseController@boundStudents');
     })->middleware(\app\middleware\Auth::class);
 });
 

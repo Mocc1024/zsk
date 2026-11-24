@@ -28,6 +28,7 @@ const ICON_OPTIONS = [
   'AppstoreOutlined',
   'DashboardOutlined',
   'FileTextOutlined',
+  'HeartOutlined',
   'HistoryOutlined',
   'MenuOutlined',
   'SafetyCertificateOutlined',

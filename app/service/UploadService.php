@@ -12,7 +12,7 @@ use think\file\UploadedFile;
  * 上传服务：校验 → 存盘 → 入库
  *
  * 安全要点：
- *   · 扩展名与 MIME 双重白名单（MIME 由服务端 finfo 探测，不信任客户端）
+ *   · 扩展名与 MIME 双重白名单（MIME 优先由服务端 finfo 探测，无 fileinfo 时按已校验扩展名回退，不信任客户端）
  *   · 图片额外用 getimagesize 二次校验，伪装图片直接拒绝
  *   · 文件名随机生成，杜绝 .php 等可执行后缀与路径穿越
  *   · 落盘目录为 public/storage，该目录已配置为禁止解析脚本
@@ -21,6 +21,21 @@ class UploadService
 {
     /** 图片类型允许的附加 MIME（finfo 与 getimagesize 结果可能不同） */
     private const IMAGE_MIME_ALIAS = ['image/jpg' => 'image/jpeg'];
+
+    /** 未开启 fileinfo 扩展时，按已校验的扩展名回退推断 MIME */
+    private const EXT_MIME = [
+        'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+        'gif' => 'image/gif', 'webp' => 'image/webp', 'bmp' => 'image/bmp',
+        'mp4' => 'video/mp4', 'webm' => 'video/webm', 'mov' => 'video/quicktime',
+        'pdf' => 'application/pdf', 'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt' => 'application/vnd.ms-powerpoint',
+        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'zip' => 'application/zip', 'rar' => 'application/x-rar-compressed',
+        'txt' => 'text/plain',
+    ];
 
     /**
      * 保存上传文件并写入附件表
@@ -55,7 +70,7 @@ class UploadService
             throw new ValidateException('SVG 可内嵌脚本，已禁止上传');
         }
 
-        $mime = self::detectMime($file->getPathname());
+        $mime = self::detectMime($file->getPathname(), $ext);
         $mime = self::IMAGE_MIME_ALIAS[$mime] ?? $mime;
         if ($mime === '' || !in_array($mime, $typeConfig['mime'], true)) {
             throw new ValidateException('文件内容与扩展名不符，已拒绝：' . $ext);
@@ -149,16 +164,31 @@ class UploadService
     /**
      * 服务端探测真实 MIME
      */
-    private static function detectMime(string $path): string
+    private static function detectMime(string $path, string $ext = ''): string
     {
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        if ($finfo === false) {
-            return '';
+        if (function_exists('finfo_open')) {
+            $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo !== false) {
+                $mime = (string) @finfo_file($finfo, $path);
+                if (function_exists('finfo_close')) {
+                    @finfo_close($finfo);
+                }
+                $mime = strtolower(trim($mime));
+                if ($mime !== '') {
+                    return $mime;
+                }
+            }
         }
-        $mime = (string) finfo_file($finfo, $path);
-        finfo_close($finfo);
 
-        return strtolower(trim($mime));
+        // 未开启 fileinfo 时：图片用 getimagesize 结果，其余按已校验的扩展名回退
+        if (function_exists('getimagesize')) {
+            $info = @getimagesize($path);
+            if ($info !== false && !empty($info['mime'])) {
+                return strtolower((string) $info['mime']);
+            }
+        }
+
+        return self::EXT_MIME[$ext] ?? '';
     }
 
     /**

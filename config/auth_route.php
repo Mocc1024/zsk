@@ -128,6 +128,58 @@ return [
     ['GET', 'api/report', 'report.list'],
     ['PUT', 'api/report/:id/handle', 'report.handle'],
 
+    // ---- 全民健身（具体路径排在 :id 之前）----
+    ['GET', 'api/fitness/stat', 'fitness.stat.view'],
+
+    // 门店管理
+    ['GET', 'api/fitness/store/options', 'fitness.store.list'],
+    ['GET', 'api/fitness/store', 'fitness.store.list'],
+    ['POST', 'api/fitness/store', 'fitness.store.create'],
+    ['PUT', 'api/fitness/store/:id', 'fitness.store.update'],
+    ['PUT', 'api/fitness/store/:id/restore', 'fitness.store.delete'],
+    ['DELETE', 'api/fitness/store/:id', 'fitness.store.delete'],
+
+    // 教练管理
+    ['GET', 'api/fitness/coach/options', 'fitness.coach.list'],
+    ['GET', 'api/fitness/coach/students', 'fitness.coach.bind-students'],
+    ['POST', 'api/fitness/coach/performance-reverse', 'fitness.coach.performance'],
+    ['GET', 'api/fitness/coach', 'fitness.coach.list'],
+    ['POST', 'api/fitness/coach', 'fitness.coach.create'],
+    ['GET', 'api/fitness/coach/:id', 'fitness.coach.list'],
+    ['PUT', 'api/fitness/coach/:id', 'fitness.coach.update'],
+    ['PUT', 'api/fitness/coach/:id/store', 'fitness.coach.bind-store'],
+    ['PUT', 'api/fitness/coach/:id/students', 'fitness.coach.bind-students'],
+    ['POST', 'api/fitness/coach/:id/performance', 'fitness.coach.performance'],
+    ['GET', 'api/fitness/coach/:id/performance', 'fitness.coach.performance'],
+    ['GET', 'api/fitness/coach/:id/bound-students', 'fitness.coach.performance'],
+    ['POST', 'api/fitness/coach/:id/resign', 'fitness.coach.resign'],
+    ['POST', 'api/fitness/coach/:id/restore', 'fitness.coach.resign'],
+
+    // 会员管理
+    ['GET', 'api/fitness/member', 'fitness.member.list'],
+    ['POST', 'api/fitness/member', 'fitness.member.create'],
+    ['GET', 'api/fitness/member/:id', 'fitness.member.list'],
+    ['PUT', 'api/fitness/member/:id', 'fitness.member.update'],
+    ['DELETE', 'api/fitness/member/:id', 'fitness.member.delete'],
+    ['POST', 'api/fitness/member/:id/restore', 'fitness.member.delete'],
+    ['POST', 'api/fitness/member/:id/consume', 'fitness.member.consume'],
+    ['GET', 'api/fitness/member/:id/consume', 'fitness.member.consume'],
+    ['DELETE', 'api/fitness/member/consume/:id', 'fitness.member.consume'],
+    ['GET', 'api/fitness/member/:id/card', 'fitness.member.card'],
+    ['POST', 'api/fitness/member/:id/card', 'fitness.member.card'],
+    ['POST', 'api/fitness/member/card/reverse', 'fitness.member.card'],
+
+    // 企业管理
+    ['GET', 'api/fitness/enterprise/options', 'fitness.enterprise.list'],
+    ['GET', 'api/fitness/enterprise', 'fitness.enterprise.list'],
+    ['POST', 'api/fitness/enterprise', 'fitness.enterprise.create'],
+    ['GET', 'api/fitness/enterprise/:id', 'fitness.enterprise.list'],
+    ['PUT', 'api/fitness/enterprise/:id', 'fitness.enterprise.update'],
+    ['DELETE', 'api/fitness/enterprise/:id', 'fitness.enterprise.delete'],
+    ['POST', 'api/fitness/enterprise/:id/restore', 'fitness.enterprise.delete'],
+    ['PUT', 'api/fitness/enterprise/:id/students', 'fitness.enterprise.bind-students'],
+    ['GET', 'api/fitness/enterprise/:id/students', 'fitness.enterprise.bind-students'],
+
     // 权限菜单管理
     ['GET', 'api/permission/tree', 'permission.list'],
     ['GET', 'api/permission', 'permission.list'],
