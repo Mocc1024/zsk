@@ -134,6 +134,7 @@ return [
     // 门店管理
     ['GET', 'api/fitness/store/options', 'fitness.store.list'],
     ['GET', 'api/fitness/store', 'fitness.store.list'],
+    ['GET', 'api/fitness/store/export', 'fitness.store.list'],
     ['POST', 'api/fitness/store', 'fitness.store.create'],
     ['PUT', 'api/fitness/store/:id', 'fitness.store.update'],
     ['PUT', 'api/fitness/store/:id/restore', 'fitness.store.delete'],
@@ -144,6 +145,7 @@ return [
     ['GET', 'api/fitness/coach/students', 'fitness.coach.bind-students'],
     ['POST', 'api/fitness/coach/performance-reverse', 'fitness.coach.performance'],
     ['GET', 'api/fitness/coach', 'fitness.coach.list'],
+    ['GET', 'api/fitness/coach/export', 'fitness.coach.list'],
     ['POST', 'api/fitness/coach', 'fitness.coach.create'],
     ['GET', 'api/fitness/coach/:id', 'fitness.coach.list'],
     ['PUT', 'api/fitness/coach/:id', 'fitness.coach.update'],
@@ -158,6 +160,7 @@ return [
 
     // 会员管理
     ['GET', 'api/fitness/member', 'fitness.member.list'],
+    ['GET', 'api/fitness/member/export', 'fitness.member.list'],
     ['POST', 'api/fitness/member', 'fitness.member.create'],
     ['GET', 'api/fitness/member/:id', 'fitness.member.list'],
     ['PUT', 'api/fitness/member/:id', 'fitness.member.update'],
@@ -175,6 +178,7 @@ return [
     // 企业管理
     ['GET', 'api/fitness/enterprise/options', 'fitness.enterprise.list'],
     ['GET', 'api/fitness/enterprise', 'fitness.enterprise.list'],
+    ['GET', 'api/fitness/enterprise/export', 'fitness.enterprise.list'],
     ['POST', 'api/fitness/enterprise', 'fitness.enterprise.create'],
     ['GET', 'api/fitness/enterprise/:id', 'fitness.enterprise.list'],
     ['PUT', 'api/fitness/enterprise/:id', 'fitness.enterprise.update'],

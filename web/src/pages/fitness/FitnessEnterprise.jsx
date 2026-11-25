@@ -3,9 +3,10 @@ import {
   Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Transfer,
   Typography, message,
 } from 'antd';
-import { EditOutlined, PlusOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons';
+import { EditOutlined, PlusOutlined, SearchOutlined, UndoOutlined, ExportOutlined } from '@ant-design/icons';
 import { fitnessEnterpriseApi, fitnessStoreApi, fitnessMemberApi } from '../../api';
 import { useAuth } from '../../store/AuthContext';
+import { downloadExport } from '../../utils/export';
 
 /** 全民健身 - 企业管理 */
 export default function FitnessEnterprise() {
@@ -87,6 +88,15 @@ export default function FitnessEnterprise() {
     fetchList();
   };
 
+  const handleExportList = async () => {
+    const params = { ...query };
+    delete params.page;
+    delete params.limit;
+    const res = await fitnessEnterpriseApi.exportList(params);
+    downloadExport(res, '企业列表.csv');
+    message.success(`已导出 ${res.data?.count ?? 0} 条记录`);
+  };
+
   const openBind = async (record) => {
     setBindEnterprise(record);
     bindForm.resetFields();
@@ -118,9 +128,14 @@ export default function FitnessEnterprise() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>企业管理</Typography.Title>
-        {hasPermission('fitness.enterprise.create') && (
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新增企业</Button>
-        )}
+        <Space>
+          {hasPermission('fitness.enterprise.list') && (
+            <Button icon={<ExportOutlined />} onClick={handleExportList}>导出Excel</Button>
+          )}
+          {hasPermission('fitness.enterprise.create') && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新增企业</Button>
+          )}
+        </Space>
       </div>
 
       <Card bordered={false} style={{ marginBottom: 16 }}>

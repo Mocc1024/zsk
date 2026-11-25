@@ -173,6 +173,7 @@ Route::group('api', function () {
         // 门店管理
         Route::get('fitness/store/options', '\app\controller\FitnessStoreController@options');
         Route::get('fitness/store', '\app\controller\FitnessStoreController@index');
+        Route::get('fitness/store/export', '\app\controller\FitnessStoreController@export');
         Route::post('fitness/store', '\app\controller\FitnessStoreController@save');
         Route::put('fitness/store/:id/restore', '\app\controller\FitnessStoreController@restore');
         Route::put('fitness/store/:id', '\app\controller\FitnessStoreController@update');
@@ -183,6 +184,7 @@ Route::group('api', function () {
         Route::get('fitness/coach/students', '\app\controller\FitnessCoachController@studentOptions');
         Route::post('fitness/coach/performance-reverse', '\app\controller\FitnessCoachController@performanceReverse');
         Route::get('fitness/coach', '\app\controller\FitnessCoachController@index');
+        Route::get('fitness/coach/export', '\app\controller\FitnessCoachController@export');
         Route::post('fitness/coach', '\app\controller\FitnessCoachController@save');
         Route::get('fitness/coach/:id', '\app\controller\FitnessCoachController@read');
         Route::put('fitness/coach/:id', '\app\controller\FitnessCoachController@update');
@@ -197,6 +199,7 @@ Route::group('api', function () {
 
         // 会员管理
         Route::get('fitness/member', '\app\controller\FitnessMemberController@index');
+        Route::get('fitness/member/export', '\app\controller\FitnessMemberController@export');
         Route::post('fitness/member', '\app\controller\FitnessMemberController@save');
         Route::get('fitness/member/:id', '\app\controller\FitnessMemberController@read');
         Route::put('fitness/member/:id', '\app\controller\FitnessMemberController@update');
@@ -214,6 +217,7 @@ Route::group('api', function () {
         // 企业管理
         Route::get('fitness/enterprise/options', '\app\controller\FitnessEnterpriseController@options');
         Route::get('fitness/enterprise', '\app\controller\FitnessEnterpriseController@index');
+        Route::get('fitness/enterprise/export', '\app\controller\FitnessEnterpriseController@export');
         Route::post('fitness/enterprise', '\app\controller\FitnessEnterpriseController@save');
         Route::get('fitness/enterprise/:id', '\app\controller\FitnessEnterpriseController@read');
         Route::put('fitness/enterprise/:id', '\app\controller\FitnessEnterpriseController@update');

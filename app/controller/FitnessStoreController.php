@@ -4,6 +4,7 @@ declare (strict_types = 1);
 namespace app\controller;
 
 use app\BaseController;
+use app\service\FitnessExportService;
 use app\service\FitnessService;
 use think\facade\Db;
 
@@ -53,6 +54,71 @@ class FitnessStoreController extends BaseController
         return $this->success([
             'list' => $list, 'total' => $total, 'page' => $page, 'pageSize' => $limit,
         ]);
+    }
+
+    /** 门店列表导出（按当前搜索条件导出全部，含实时指标） */
+    public function export()
+    {
+        $this->checkPermission('fitness.store.list');
+
+        $keyword = trim((string) $this->input('keyword', ''));
+        $deleted = (int) $this->input('deleted', 0);
+
+        $query = Db::name('fitness_store');
+        if ($deleted === 1) {
+            $query->whereNotNull('delete_time');
+        } else {
+            $query->whereNull('delete_time');
+        }
+        if ($keyword !== '') {
+            $query->where('name|address', 'like', '%' . $keyword . '%');
+        }
+        $rows = $query->order('sort', 'desc')->order('id', 'asc')->select()->toArray();
+
+        $ids   = array_column($rows, 'id');
+        $stats = $ids ? FitnessService::storeStats(null, $ids) : [];
+        $statMap = [];
+        foreach ($stats as $stat) {
+            $statMap[(int) $stat['store_id']] = $stat;
+        }
+
+        $data = [];
+        foreach ($rows as $row) {
+            $m     = $statMap[(int) $row['id']] ?? [];
+            $perf  = $m['performance'] ?? [];
+            $card  = $perf['card'] ?? [];
+            $coach = $perf['coach'] ?? [];
+            $data[] = [
+                $row['name'] ?? '',
+                $row['address'] ?? '',
+                $card['total'] ?? 0,
+                $coach['total'] ?? 0,
+                $card['year'] ?? 0,
+                $coach['year'] ?? 0,
+                $card['month'] ?? 0,
+                $coach['month'] ?? 0,
+                $card['today'] ?? 0,
+                $coach['today'] ?? 0,
+                $m['lesson_done'] ?? 0,
+                $m['lesson_pending'] ?? 0,
+                $m['member_count'] ?? 0,
+                $m['coach_count'] ?? 0,
+                $m['enterprise_count'] ?? 0,
+                $row['delete_time'] ? '禁用' : '启用',
+            ];
+        }
+
+        return $this->success(FitnessExportService::payload(
+            '门店列表_' . date('Ymd_His') . '.csv',
+            [
+                '门店名称', '地址', '总业绩（会员卡）', '总业绩（绩效）',
+                '今年业绩（会员卡）', '今年业绩（绩效）',
+                '本月业绩（会员卡）', '本月业绩（绩效）',
+                '今日业绩（会员卡）', '今日业绩（绩效）',
+                '已上课时', '待上课时', '会员数', '教练数', '企业数', '状态',
+            ],
+            $data
+        ));
     }
 
     /** 新增 */

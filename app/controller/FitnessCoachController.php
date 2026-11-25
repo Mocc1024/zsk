@@ -407,6 +407,59 @@ class FitnessCoachController extends BaseController
         return $this->success(null, '恢复成功');
     }
 
+    /** 教练列表导出（按当前搜索条件导出全部） */
+    public function export()
+    {
+        $this->checkPermission('fitness.coach.list');
+
+        $keyword = trim((string) $this->input('keyword', ''));
+        $status  = (int) $this->input('status', 1);
+        $storeId = (int) $this->input('store_id', 0);
+
+        $query = Db::name('fitness_coach')->alias('c')
+            ->field('c.*, s.name AS store_name')
+            ->join('fitness_store s', 'c.store_id = s.id', 'LEFT')
+            ->whereNull('c.delete_time');
+        if ($keyword !== '') {
+            $query->where('c.name|c.mobile', 'like', '%' . $keyword . '%');
+        }
+        if ($storeId > 0) {
+            $query->where('c.store_id', $storeId);
+        }
+        if (in_array($status, [1, 2], true)) {
+            $query->where('c.status', $status);
+        }
+
+        $rows = $query->order('c.id', 'desc')->select()->toArray();
+        $coachIds = array_column($rows, 'id');
+        $studentCounts = [];
+        if ($coachIds) {
+            $studentCounts = Db::name('fitness_member')
+                ->whereIn('coach_id', $coachIds)->whereNull('delete_time')
+                ->group('coach_id')->column('COUNT(*)', 'coach_id');
+        }
+
+        $data = [];
+        foreach ($rows as $row) {
+            $data[] = [
+                $row['id'],
+                $row['name'] ?? '',
+                $row['mobile'] ?? '',
+                $row['store_name'] ?? '',
+                (int) $row['status'] === FitnessService::COACH_ACTIVE ? '在职' : '离职',
+                (int) ($studentCounts[$row['id']] ?? 0),
+                $row['birth_date'] ?? '',
+                $row['create_time'] ?? '',
+            ];
+        }
+
+        return $this->success(FitnessExportService::payload(
+            '教练列表_' . date('Ymd_His') . '.csv',
+            ['ID', '姓名', '手机号', '门店', '状态', '绑定学员数', '出生日期', '创建时间'],
+            $data
+        ));
+    }
+
     /** 绩效记录导出（CSV，Excel 可直接打开） */
     public function performanceExport($id = 0)
     {

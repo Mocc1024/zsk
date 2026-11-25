@@ -229,13 +229,27 @@ export default function FitnessCoach() {
     message.success(`已导出 ${res.data?.count ?? 0} 条记录`);
   };
 
+  const handleExportList = async () => {
+    const params = { ...query };
+    delete params.page;
+    delete params.limit;
+    const res = await fitnessCoachApi.exportList(params);
+    downloadExport(res, '教练列表.csv');
+    message.success(`已导出 ${res.data?.count ?? 0} 条记录`);
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>教练管理</Typography.Title>
-        {hasPermission('fitness.coach.create') && (
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>加入教练</Button>
-        )}
+        <Space>
+          {hasPermission('fitness.coach.list') && (
+            <Button icon={<ExportOutlined />} onClick={handleExportList}>导出Excel</Button>
+          )}
+          {hasPermission('fitness.coach.create') && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>加入教练</Button>
+          )}
+        </Space>
       </div>
 
       <Card bordered={false} style={{ marginBottom: 16 }}>

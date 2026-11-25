@@ -127,7 +127,7 @@ class FitnessService
      *
      * @return array<int,array<string,mixed>>
      */
-    public static function storeStats(?int $storeId = null): array
+    public static function storeStats(?int $storeId = null, ?array $storeIds = null): array
     {
         $now    = date('Y-m-d H:i:s');
         $year   = date('Y-01-01 00:00:00');
@@ -135,12 +135,14 @@ class FitnessService
         $today  = date('Y-m-d 00:00:00');
         $bounds = ['year' => $year, 'month' => $month, 'today' => $today, 'now' => $now];
 
-        $stores = Db::name('fitness_store')
-            ->whereNull('delete_time')
-            ->where('status', 1)
-            ->field('id,name,address');
-        if ($storeId !== null && $storeId > 0) {
-            $stores->where('id', $storeId);
+        $stores = Db::name('fitness_store')->field('id,name,address');
+        if ($storeIds !== null) {
+            $stores->whereIn('id', $storeIds);
+        } else {
+            $stores->whereNull('delete_time')->where('status', 1);
+            if ($storeId !== null && $storeId > 0) {
+                $stores->where('id', $storeId);
+            }
         }
         $stores = $stores->order('sort', 'desc')->order('id', 'asc')->select()->toArray();
 
@@ -198,18 +200,13 @@ class FitnessService
         $result = [];
         foreach ($stores as $store) {
             $sid = (int) $store['id'];
-            $rev = $revenue[$sid] ?? ['total' => 0.0, 'year' => 0.0, 'month' => 0.0, 'today' => 0.0];
+            $rev = array_replace_recursive(self::emptyRevenue(), $revenue[$sid] ?? []);
             $mem = $memberMap[$sid] ?? ['member_count' => 0, 'lesson_pending' => 0];
             $result[] = [
                 'store_id'        => $sid,
                 'store_name'      => $store['name'],
                 'address'         => $store['address'],
-                'performance'     => [
-                    'total'  => $rev['total'],
-                    'year'   => $rev['year'],
-                    'month'  => $rev['month'],
-                    'today'  => $rev['today'],
-                ],
+                'performance'     => $rev,
                 'lesson_done'     => (int) ($consumeMap[$sid] ?? 0),
                 'lesson_pending'  => $mem['lesson_pending'],
                 'member_count'    => $mem['member_count'],
@@ -220,46 +217,61 @@ class FitnessService
         return $result;
     }
 
+    /** 空业绩结构：合计 + 会员卡/教练绩效分项 */
+    private static function emptyRevenue(): array
+    {
+        $zero = ['total' => 0.0, 'year' => 0.0, 'month' => 0.0, 'today' => 0.0];
+        return $zero + ['card' => $zero, 'coach' => $zero];
+    }
+
     /**
-     * 业绩聚合：按门店汇总各时间范围的金额
+     * 业绩聚合：按门店汇总各时间范围的金额，并区分会员卡业绩与教练绩效业绩
      */
     private static function revenueAgg(array $storeIds, array $bounds): array
     {
         $in     = implode(',', array_map('intval', $storeIds));
         $prefix = (string) (config('database.connections.mysql.prefix') ?: 'zsk_');
         $rows   = [];
+        $sources = [
+            ['type' => 'card',  'table' => self::TABLE_CARD, 'date' => 'card_date'],
+            ['type' => 'coach', 'table' => self::TABLE_PERF, 'date' => 'perf_date'],
+        ];
 
-        foreach ([self::TABLE_CARD => 'card_date', self::TABLE_PERF => 'perf_date'] as $table => $dateField) {
-            $ranges = ['yr' => 'year', 'mo' => 'month', 'td' => 'today'];
-            $cases  = [];
-            foreach ($ranges as $alias => $boundKey) {
-                $from   = $bounds[$boundKey];
-                $to     = $bounds['now'];
+        foreach ($sources as $source) {
+            $dateField = $source['date'];
+            $cases = [];
+            foreach (['yr' => 'year', 'mo' => 'month', 'td' => 'today'] as $alias => $boundKey) {
+                $from    = $bounds[$boundKey];
+                $to      = $bounds['now'];
                 $cases[] = "SUM(CASE WHEN {$dateField} >= '{$from}' AND {$dateField} <= '{$to}' THEN amount ELSE 0 END) AS {$alias}";
             }
             $sql = 'SELECT store_id, SUM(amount) AS total, ' . implode(', ', $cases)
-                . ' FROM ' . $prefix . $table
+                . ' FROM ' . $prefix . $source['table']
                 . ' WHERE store_id IN (' . $in . ')'
                 . ' AND ' . $dateField . ' IS NOT NULL'
                 . ' GROUP BY store_id';
 
             foreach (Db::query($sql) as $row) {
-                $sid = (int) $row['store_id'];
+                $sid  = (int) $row['store_id'];
+                $type = $source['type'];
                 if (!isset($rows[$sid])) {
-                    $rows[$sid] = ['total' => 0.0, 'year' => 0.0, 'month' => 0.0, 'today' => 0.0];
+                    $rows[$sid] = self::emptyRevenue();
                 }
-                $rows[$sid]['total'] += (float) $row['total'];
-                $rows[$sid]['year']  += (float) $row['yr'];
-                $rows[$sid]['month'] += (float) $row['mo'];
-                $rows[$sid]['today'] += (float) $row['td'];
+                foreach (['total' => 'total', 'year' => 'yr', 'month' => 'mo', 'today' => 'td'] as $key => $field) {
+                    $value = (float) $row[$field];
+                    $rows[$sid][$key] += $value;
+                    $rows[$sid][$type][$key] += $value;
+                }
             }
         }
 
         foreach ($rows as &$row) {
-            foreach ($row as &$v) {
-                $v = round($v, 2);
+            foreach (['total', 'year', 'month', 'today'] as $key) {
+                $row[$key] = round($row[$key], 2);
+                foreach (['card', 'coach'] as $type) {
+                    $row[$type][$key] = round($row[$type][$key], 2);
+                }
             }
-            unset($v);
         }
         unset($row);
         return $rows;

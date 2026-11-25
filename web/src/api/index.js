@@ -199,6 +199,7 @@ export const fitnessStoreApi = {
   update: (id, data) => request.put(`/fitness/store/${id}`, data),
   restore: (id) => request.put(`/fitness/store/${id}/restore`),
   remove: (id) => request.delete(`/fitness/store/${id}`),
+  exportList: (params) => request.get('/fitness/store/export', { params }),
 };
 
 /** 全民健身 - 教练管理 */
@@ -216,6 +217,7 @@ export const fitnessCoachApi = {
   performanceList: (id, params) => request.get(`/fitness/coach/${id}/performance`, { params }),
   performanceReverse: (id) => request.post('/fitness/coach/performance-reverse', { id }),
   performanceExport: (id) => request.get(`/fitness/coach/${id}/performance/export`),
+  exportList: (params) => request.get('/fitness/coach/export', { params }),
   resign: (id) => request.post(`/fitness/coach/${id}/resign`),
   restore: (id) => request.post(`/fitness/coach/${id}/restore`),
 };
@@ -236,6 +238,7 @@ export const fitnessMemberApi = {
   cardReverse: (id) => request.post('/fitness/member/card/reverse', { id }),
   consumeExport: (id) => request.get(`/fitness/member/${id}/consume/export`),
   cardExport: (id) => request.get(`/fitness/member/${id}/card/export`),
+  exportList: (params) => request.get('/fitness/member/export', { params }),
 };
 
 /** 全民健身 - 企业管理 */
@@ -249,6 +252,7 @@ export const fitnessEnterpriseApi = {
   restore: (id) => request.post(`/fitness/enterprise/${id}/restore`),
   bindStudents: (id, memberIds) => request.put(`/fitness/enterprise/${id}/students`, { member_ids: memberIds }),
   boundStudents: (id) => request.get(`/fitness/enterprise/${id}/students`),
+  exportList: (params) => request.get('/fitness/enterprise/export', { params }),
 };
 
 /** 操作日志 */

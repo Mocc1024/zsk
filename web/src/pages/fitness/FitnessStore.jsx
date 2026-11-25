@@ -112,10 +112,14 @@ export default function FitnessStore() {
         }
       >
         <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} md={6}><Statistic title="总业绩" value={metrics?.performance?.total || 0} precision={2} prefix="¥" /></Col>
-          <Col xs={24} sm={12} md={6}><Statistic title="今年业绩" value={metrics?.performance?.year || 0} precision={2} prefix="¥" /></Col>
-          <Col xs={24} sm={12} md={6}><Statistic title="本月业绩" value={metrics?.performance?.month || 0} precision={2} prefix="¥" /></Col>
-          <Col xs={24} sm={12} md={6}><Statistic title="今日业绩" value={metrics?.performance?.today || 0} precision={2} prefix="¥" /></Col>
+          <Col xs={24} sm={12} md={6}><Statistic title="会员卡总业绩" value={metrics?.performance?.card?.total || 0} precision={2} prefix="¥" /></Col>
+          <Col xs={24} sm={12} md={6}><Statistic title="会员卡今年业绩" value={metrics?.performance?.card?.year || 0} precision={2} prefix="¥" /></Col>
+          <Col xs={24} sm={12} md={6}><Statistic title="会员卡本月业绩" value={metrics?.performance?.card?.month || 0} precision={2} prefix="¥" /></Col>
+          <Col xs={24} sm={12} md={6}><Statistic title="会员卡今日业绩" value={metrics?.performance?.card?.today || 0} precision={2} prefix="¥" /></Col>
+          <Col xs={24} sm={12} md={6}><Statistic title="教练绩效总业绩" value={metrics?.performance?.coach?.total || 0} precision={2} prefix="¥" /></Col>
+          <Col xs={24} sm={12} md={6}><Statistic title="教练绩效今年业绩" value={metrics?.performance?.coach?.year || 0} precision={2} prefix="¥" /></Col>
+          <Col xs={24} sm={12} md={6}><Statistic title="教练绩效本月业绩" value={metrics?.performance?.coach?.month || 0} precision={2} prefix="¥" /></Col>
+          <Col xs={24} sm={12} md={6}><Statistic title="教练绩效今日业绩" value={metrics?.performance?.coach?.today || 0} precision={2} prefix="¥" /></Col>
           <Col xs={24} sm={12} md={6}><Statistic title="已上课时" value={metrics?.lesson_done || 0} suffix="次" /></Col>
           <Col xs={24} sm={12} md={6}><Statistic title="待上课时" value={metrics?.lesson_pending || 0} suffix="次" /></Col>
           <Col xs={24} sm={8} md={4}><Statistic title="会员数" value={metrics?.member_count || 0} /></Col>

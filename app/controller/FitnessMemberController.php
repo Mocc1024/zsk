@@ -46,36 +46,7 @@ class FitnessMemberController extends BaseController
         $total = (int) (clone $query)->count();
         $list  = $query->order('m.id', 'desc')->page($page, $limit)->select()->toArray();
 
-        // 每个会员当前有效会员卡的最晚到期日（排除已冲销的记录）
-        $memberIds = array_column($list, 'id');
-        $endMap    = [];
-        if ($memberIds) {
-            $cards = Db::name('fitness_member_card')
-                ->whereIn('member_id', $memberIds)
-                ->field('id,member_id,end_date,amount,reverse_of')
-                ->select()->toArray();
-            $reversedIds = [];
-            foreach ($cards as $card) {
-                if ((int) $card['reverse_of'] > 0) {
-                    $reversedIds[(int) $card['reverse_of']] = true;
-                }
-            }
-            foreach ($cards as $card) {
-                $cardId = (int) $card['id'];
-                if ((int) $card['reverse_of'] > 0 || (float) $card['amount'] <= 0 || isset($reversedIds[$cardId])) {
-                    continue;
-                }
-                $mid = (int) $card['member_id'];
-                $end = (string) $card['end_date'];
-                if ($end !== '' && (!isset($endMap[$mid]) || strcmp($end, $endMap[$mid]) > 0)) {
-                    $endMap[$mid] = $end;
-                }
-            }
-        }
-        foreach ($list as &$member) {
-            $member['max_card_end_date'] = $endMap[(int) $member['id']] ?? null;
-        }
-        unset($member);
+        $this->attachMaxCardEndDate($list);
 
         return $this->success([
             'list' => $list, 'total' => $total, 'page' => $page, 'pageSize' => $limit,
@@ -432,5 +403,91 @@ class FitnessMemberController extends BaseController
             ['记录ID', '办卡门店', '办卡日期', '开始日期', '到期日期', '金额(元)', '状态', '录入时间'],
             $data
         ));
+    }
+
+    /** 会员列表导出（按当前搜索条件导出全部） */
+    public function export()
+    {
+        $this->checkPermission('fitness.member.list');
+
+        $keyword = trim((string) $this->input('keyword', ''));
+        $storeId = (int) $this->input('store_id', 0);
+        $deleted = (int) $this->input('deleted', 0);
+
+        $query = Db::name('fitness_member')->alias('m')
+            ->field('m.*, s.name AS store_name, c.name AS coach_name, e.name AS enterprise_name')
+            ->join('fitness_store s', 'm.store_id = s.id', 'LEFT')
+            ->join('fitness_coach c', 'm.coach_id = c.id', 'LEFT')
+            ->join('fitness_enterprise e', 'm.enterprise_id = e.id', 'LEFT');
+        if ($deleted === 1) {
+            $query->whereNotNull('m.delete_time');
+        } else {
+            $query->whereNull('m.delete_time');
+        }
+        if ($keyword !== '') {
+            $query->where('m.name|m.mobile', 'like', '%' . $keyword . '%');
+        }
+        if ($storeId > 0) {
+            $query->where('m.store_id', $storeId);
+        }
+
+        $rows = $query->order('m.id', 'desc')->select()->toArray();
+        $this->attachMaxCardEndDate($rows);
+
+        $data = [];
+        foreach ($rows as $row) {
+            $data[] = [
+                $row['id'],
+                $row['name'] ?? '',
+                $row['mobile'] ?? '',
+                $row['store_name'] ?? '',
+                $row['coach_name'] ?? '',
+                $row['enterprise_name'] ?? '',
+                $row['lesson_balance'] ?? 0,
+                $row['max_card_end_date'] ?? '',
+                $row['delete_time'] ? '禁用' : '启用',
+                $row['create_time'] ?? '',
+            ];
+        }
+
+        return $this->success(FitnessExportService::payload(
+            '会员列表_' . date('Ymd_His') . '.csv',
+            ['ID', '姓名', '手机号', '门店', '教练', '企业', '课时余额', '最晚卡到期', '状态', '创建时间'],
+            $data
+        ));
+    }
+
+    /** 为会员列表补充最晚有效卡到期日（排除已冲销记录） */
+    private function attachMaxCardEndDate(array &$list): void
+    {
+        $memberIds = array_column($list, 'id');
+        $endMap    = [];
+        if ($memberIds) {
+            $cards = Db::name('fitness_member_card')
+                ->whereIn('member_id', $memberIds)
+                ->field('id,member_id,end_date,amount,reverse_of')
+                ->select()->toArray();
+            $reversedIds = [];
+            foreach ($cards as $card) {
+                if ((int) $card['reverse_of'] > 0) {
+                    $reversedIds[(int) $card['reverse_of']] = true;
+                }
+            }
+            foreach ($cards as $card) {
+                $cardId = (int) $card['id'];
+                if ((int) $card['reverse_of'] > 0 || (float) $card['amount'] <= 0 || isset($reversedIds[$cardId])) {
+                    continue;
+                }
+                $mid = (int) $card['member_id'];
+                $end = (string) $card['end_date'];
+                if ($end !== '' && (!isset($endMap[$mid]) || strcmp($end, $endMap[$mid]) > 0)) {
+                    $endMap[$mid] = $end;
+                }
+            }
+        }
+        foreach ($list as &$member) {
+            $member['max_card_end_date'] = $endMap[(int) $member['id']] ?? null;
+        }
+        unset($member);
     }
 }

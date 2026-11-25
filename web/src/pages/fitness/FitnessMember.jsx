@@ -113,6 +113,15 @@ export default function FitnessMember() {
     message.success(`已导出 ${res.data?.count ?? 0} 条记录`);
   };
 
+  const handleExportList = async () => {
+    const params = { ...query };
+    delete params.page;
+    delete params.limit;
+    const res = await fitnessMemberApi.exportList(params);
+    downloadExport(res, '会员列表.csv');
+    message.success(`已导出 ${res.data?.count ?? 0} 条记录`);
+  };
+
   const openConsume = (record) => {
     setActiveMember(record);
     consumeForm.resetFields();
@@ -178,9 +187,14 @@ export default function FitnessMember() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>会员管理</Typography.Title>
-        {hasPermission('fitness.member.create') && (
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新增会员</Button>
-        )}
+        <Space>
+          {hasPermission('fitness.member.list') && (
+            <Button icon={<ExportOutlined />} onClick={handleExportList}>导出Excel</Button>
+          )}
+          {hasPermission('fitness.member.create') && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新增会员</Button>
+          )}
+        </Space>
       </div>
 
       <Card bordered={false} style={{ marginBottom: 16 }}>

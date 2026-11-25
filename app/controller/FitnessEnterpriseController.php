@@ -4,6 +4,7 @@ declare (strict_types = 1);
 namespace app\controller;
 
 use app\BaseController;
+use app\service\FitnessExportService;
 use think\facade\Db;
 
 /**
@@ -242,5 +243,60 @@ class FitnessEnterpriseController extends BaseController
 
         $this->log('fitness.enterprise', 'restore', '恢复企业 #' . $id . '：' . $row['name']);
         return $this->success(null, '恢复成功');
+    }
+
+    /** 企业列表导出（按当前搜索条件导出全部） */
+    public function export()
+    {
+        $this->checkPermission('fitness.enterprise.list');
+
+        $keyword = trim((string) $this->input('keyword', ''));
+        $deleted = (int) $this->input('deleted', 0);
+        $storeId = (int) $this->input('store_id', 0);
+
+        $query = Db::name('fitness_enterprise')->alias('e')
+            ->field('e.*, s.name AS store_name')
+            ->join('fitness_store s', 'e.store_id = s.id', 'LEFT');
+        if ($deleted === 1) {
+            $query->whereNotNull('e.delete_time');
+        } else {
+            $query->whereNull('e.delete_time');
+        }
+        if ($keyword !== '') {
+            $query->where('e.name|e.guild_name', 'like', '%' . $keyword . '%');
+        }
+        if ($storeId > 0) {
+            $query->where('e.store_id', $storeId);
+        }
+
+        $rows = $query->order('e.id', 'desc')->select()->toArray();
+        $ids = array_column($rows, 'id');
+        $studentCounts = [];
+        if ($ids) {
+            $studentCounts = Db::name('fitness_member')
+                ->whereIn('enterprise_id', $ids)->whereNull('delete_time')
+                ->group('enterprise_id')->column('COUNT(*)', 'enterprise_id');
+        }
+
+        $data = [];
+        foreach ($rows as $row) {
+            $data[] = [
+                $row['id'],
+                $row['name'] ?? '',
+                $row['guild_name'] ?? '',
+                $row['store_name'] ?? '',
+                (int) ($studentCounts[$row['id']] ?? 0),
+                $row['intro'] ?? '',
+                $row['guild_intro'] ?? '',
+                $row['delete_time'] ? '禁用' : '启用',
+                $row['create_time'] ?? '',
+            ];
+        }
+
+        return $this->success(FitnessExportService::payload(
+            '企业列表_' . date('Ymd_His') . '.csv',
+            ['ID', '企业名称', '公会名称', '门店', '学员数', '企业介绍', '公会介绍', '状态', '创建时间'],
+            $data
+        ));
     }
 }
