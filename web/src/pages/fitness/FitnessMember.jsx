@@ -3,13 +3,14 @@ import {
   Button, Card, DatePicker, Form, Input, InputNumber, Modal, Popconfirm, Select,
   Space, Table, Tag, Typography, message, Drawer, List,
 } from 'antd';
-import { EditOutlined, PlusOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons';
+import { EditOutlined, PlusOutlined, SearchOutlined, UndoOutlined, ExportOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
   fitnessMemberApi, fitnessStoreApi, fitnessEnterpriseApi,
 } from '../../api';
 import { useAuth } from '../../store/AuthContext';
 import { CoverUpload } from '../../components/UploadFile';
+import { downloadExport } from '../../utils/export';
 
 const fmt = 'YYYY-MM-DD HH:mm:ss';
 
@@ -103,6 +104,15 @@ export default function FitnessMember() {
     fetchList();
   };
 
+  const handleExportRecords = async () => {
+    if (!activeMember) return;
+    const res = drawerType === 'consume'
+      ? await fitnessMemberApi.consumeExport(activeMember.id)
+      : await fitnessMemberApi.cardExport(activeMember.id);
+    downloadExport(res, drawerType === 'consume' ? '消课记录.csv' : '办卡记录.csv');
+    message.success(`已导出 ${res.data?.count ?? 0} 条记录`);
+  };
+
   const openConsume = (record) => {
     setActiveMember(record);
     consumeForm.resetFields();
@@ -194,7 +204,7 @@ export default function FitnessMember() {
 
       <Card bordered={false}>
         <Table
-          rowKey="id" loading={loading} dataSource={list} scroll={{ x: 1340 }}
+          rowKey="id" loading={loading} dataSource={list} scroll={{ x: 1460 }}
           pagination={{
             current: query.page, pageSize: query.limit, total, showTotal: (t) => `共 ${t} 条`,
             onChange: (page, limit) => setQuery((p) => ({ ...p, page, limit })),
@@ -210,6 +220,12 @@ export default function FitnessMember() {
             {
               title: '课时余额', dataIndex: 'lesson_balance', width: 100, align: 'right',
               render: (v) => <Tag color={Number(v) > 0 ? 'blue' : 'default'}>{v} 次</Tag>,
+            },
+            {
+              title: '最晚卡到期', dataIndex: 'max_card_end_date', width: 120,
+              render: (v) => v
+                ? <span style={{ color: v < new Date().toISOString().slice(0, 10) ? '#cf1322' : undefined }}>{v}</span>
+                : <span style={{ color: '#999' }}>—</span>,
             },
             {
               title: '状态', dataIndex: 'delete_time', width: 90,
@@ -306,7 +322,10 @@ export default function FitnessMember() {
       {/* 记录抽屉 */}
       <Drawer
         title={drawerType === 'consume' ? `消课记录 - ${activeMember?.name || ''}` : `办卡记录 - ${activeMember?.name || ''}`}
-        open={drawerOpen} onClose={() => setDrawerOpen(false)} width={640}
+        open={drawerOpen} onClose={() => setDrawerOpen(false)} width={720}
+        extra={hasPermission(drawerType === 'consume' ? 'fitness.member.consume' : 'fitness.member.card') && (
+          <Button size="small" icon={<ExportOutlined />} onClick={handleExportRecords}>导出Excel</Button>
+        )}
       >
         <List
           dataSource={records}
@@ -333,7 +352,7 @@ export default function FitnessMember() {
                   : <span>¥{Number(item.amount).toFixed(2)} · 有效期 {item.start_date} 至 {item.end_date}</span>}
                 description={drawerType === 'consume'
                   ? `录入：${item.create_time}${item.remark ? '　备注：' + item.remark : ''}`
-                  : `办卡日期：${item.card_date}　录入：${item.create_time}`}
+                  : `门店：${item.store_name || '未知门店'}　办卡日期：${item.card_date}　录入：${item.create_time}`}
               />
             </List.Item>
           )}

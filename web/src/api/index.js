@@ -215,6 +215,7 @@ export const fitnessCoachApi = {
   boundStudents: (id) => request.get(`/fitness/coach/${id}/bound-students`),
   performanceList: (id, params) => request.get(`/fitness/coach/${id}/performance`, { params }),
   performanceReverse: (id) => request.post('/fitness/coach/performance-reverse', { id }),
+  performanceExport: (id) => request.get(`/fitness/coach/${id}/performance/export`),
   resign: (id) => request.post(`/fitness/coach/${id}/resign`),
   restore: (id) => request.post(`/fitness/coach/${id}/restore`),
 };
@@ -233,6 +234,8 @@ export const fitnessMemberApi = {
   cardList: (id, params) => request.get(`/fitness/member/${id}/card`, { params }),
   cardCreate: (id, data) => request.post(`/fitness/member/${id}/card`, data),
   cardReverse: (id) => request.post('/fitness/member/card/reverse', { id }),
+  consumeExport: (id) => request.get(`/fitness/member/${id}/consume/export`),
+  cardExport: (id) => request.get(`/fitness/member/${id}/card/export`),
 };
 
 /** 全民健身 - 企业管理 */

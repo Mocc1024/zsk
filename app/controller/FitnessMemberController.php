@@ -4,6 +4,7 @@ declare (strict_types = 1);
 namespace app\controller;
 
 use app\BaseController;
+use app\service\FitnessExportService;
 use app\service\FitnessService;
 use think\facade\Db;
 
@@ -44,6 +45,37 @@ class FitnessMemberController extends BaseController
 
         $total = (int) (clone $query)->count();
         $list  = $query->order('m.id', 'desc')->page($page, $limit)->select()->toArray();
+
+        // 每个会员当前有效会员卡的最晚到期日（排除已冲销的记录）
+        $memberIds = array_column($list, 'id');
+        $endMap    = [];
+        if ($memberIds) {
+            $cards = Db::name('fitness_member_card')
+                ->whereIn('member_id', $memberIds)
+                ->field('id,member_id,end_date,amount,reverse_of')
+                ->select()->toArray();
+            $reversedIds = [];
+            foreach ($cards as $card) {
+                if ((int) $card['reverse_of'] > 0) {
+                    $reversedIds[(int) $card['reverse_of']] = true;
+                }
+            }
+            foreach ($cards as $card) {
+                $cardId = (int) $card['id'];
+                if ((int) $card['reverse_of'] > 0 || (float) $card['amount'] <= 0 || isset($reversedIds[$cardId])) {
+                    continue;
+                }
+                $mid = (int) $card['member_id'];
+                $end = (string) $card['end_date'];
+                if ($end !== '' && (!isset($endMap[$mid]) || strcmp($end, $endMap[$mid]) > 0)) {
+                    $endMap[$mid] = $end;
+                }
+            }
+        }
+        foreach ($list as &$member) {
+            $member['max_card_end_date'] = $endMap[(int) $member['id']] ?? null;
+        }
+        unset($member);
 
         return $this->success([
             'list' => $list, 'total' => $total, 'page' => $page, 'pageSize' => $limit,
@@ -221,9 +253,12 @@ class FitnessMemberController extends BaseController
 
         [$page, $limit] = $this->pageInfo();
         $id = (int) ($id ?: $this->request->param('id'));
-        $query = Db::name('fitness_member_card')->where('member_id', $id);
+        $query = Db::name('fitness_member_card')->alias('c')
+            ->field('c.*, s.name AS store_name')
+            ->join('fitness_store s', 'c.store_id = s.id', 'LEFT')
+            ->where('c.member_id', $id);
         $total = (int) (clone $query)->count();
-        $list  = $query->order('id', 'desc')->page($page, $limit)->select()->toArray();
+        $list  = $query->order('c.id', 'desc')->page($page, $limit)->select()->toArray();
         return $this->success([
             'list' => $list, 'total' => $total, 'page' => $page, 'pageSize' => $limit,
         ]);
@@ -331,5 +366,71 @@ class FitnessMemberController extends BaseController
 
         $this->log('fitness.member', 'restore', '恢复会员 #' . $id . '：' . $row['name']);
         return $this->success(null, '恢复成功');
+    }
+
+    /** 消课记录导出（CSV） */
+    public function consumeExport($id = 0)
+    {
+        $this->checkPermission('fitness.member.consume');
+
+        $id = (int) ($id ?: $this->request->param('id'));
+        $rows = Db::name('fitness_lesson_consume')->alias('c')
+            ->field('c.*, s.name AS store_name')
+            ->join('fitness_store s', 'c.store_id = s.id', 'LEFT')
+            ->where('c.member_id', $id)
+            ->order('c.id', 'desc')
+            ->select()->toArray();
+
+        $data = [];
+        foreach ($rows as $row) {
+            $data[] = [
+                $row['id'],
+                $row['consume_date'] ?? '',
+                $row['store_name'] ?? '',
+                $row['lessons'] ?? 0,
+                $row['remark'] ?? '',
+                $row['create_time'] ?? '',
+            ];
+        }
+
+        return $this->success(FitnessExportService::payload(
+            '消课记录_' . $id . '_' . date('Ymd_His') . '.csv',
+            ['记录ID', '消课日期', '门店', '课时(次)', '备注', '录入时间'],
+            $data
+        ));
+    }
+
+    /** 办卡记录导出（CSV） */
+    public function cardExport($id = 0)
+    {
+        $this->checkPermission('fitness.member.card');
+
+        $id = (int) ($id ?: $this->request->param('id'));
+        $rows = Db::name('fitness_member_card')->alias('c')
+            ->field('c.*, s.name AS store_name')
+            ->join('fitness_store s', 'c.store_id = s.id', 'LEFT')
+            ->where('c.member_id', $id)
+            ->order('c.id', 'desc')
+            ->select()->toArray();
+
+        $data = [];
+        foreach ($rows as $row) {
+            $data[] = [
+                $row['id'],
+                $row['store_name'] ?? '',
+                $row['card_date'] ?? '',
+                $row['start_date'] ?? '',
+                $row['end_date'] ?? '',
+                $row['amount'] ?? 0,
+                ((int) ($row['reverse_of'] ?? 0) > 0 || (float) ($row['amount'] ?? 0) < 0) ? '已冲销' : '有效',
+                $row['create_time'] ?? '',
+            ];
+        }
+
+        return $this->success(FitnessExportService::payload(
+            '办卡记录_' . $id . '_' . date('Ymd_His') . '.csv',
+            ['记录ID', '办卡门店', '办卡日期', '开始日期', '到期日期', '金额(元)', '状态', '录入时间'],
+            $data
+        ));
     }
 }

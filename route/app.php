@@ -190,6 +190,7 @@ Route::group('api', function () {
         Route::put('fitness/coach/:id/students', '\app\controller\FitnessCoachController@bindStudents');
         Route::post('fitness/coach/:id/performance', '\app\controller\FitnessCoachController@performance');
         Route::get('fitness/coach/:id/performance', '\app\controller\FitnessCoachController@performanceList');
+        Route::get('fitness/coach/:id/performance/export', '\app\controller\FitnessCoachController@performanceExport');
         Route::get('fitness/coach/:id/bound-students', '\app\controller\FitnessCoachController@boundStudents');
         Route::post('fitness/coach/:id/resign', '\app\controller\FitnessCoachController@resign');
         Route::post('fitness/coach/:id/restore', '\app\controller\FitnessCoachController@restore');
@@ -203,8 +204,10 @@ Route::group('api', function () {
         Route::post('fitness/member/:id/restore', '\app\controller\FitnessMemberController@restore');
         Route::post('fitness/member/:id/consume', '\app\controller\FitnessMemberController@consume');
         Route::get('fitness/member/:id/consume', '\app\controller\FitnessMemberController@consumeList');
+        Route::get('fitness/member/:id/consume/export', '\app\controller\FitnessMemberController@consumeExport');
         Route::delete('fitness/member/consume/:id', '\app\controller\FitnessMemberController@consumeDelete');
         Route::get('fitness/member/:id/card', '\app\controller\FitnessMemberController@cardList');
+        Route::get('fitness/member/:id/card/export', '\app\controller\FitnessMemberController@cardExport');
         Route::post('fitness/member/:id/card', '\app\controller\FitnessMemberController@cardCreate');
         Route::post('fitness/member/card/reverse', '\app\controller\FitnessMemberController@cardReverse');
 

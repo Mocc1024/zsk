@@ -4,6 +4,7 @@ declare (strict_types = 1);
 namespace app\controller;
 
 use app\BaseController;
+use app\service\FitnessExportService;
 use app\service\FitnessService;
 use think\facade\Db;
 
@@ -311,8 +312,9 @@ class FitnessCoachController extends BaseController
         $id = (int) ($id ?: $this->request->param('id'));
 
         $query = Db::name('fitness_performance')->alias('p')
-            ->field('p.*, m.name AS member_name')
+            ->field('p.*, m.name AS member_name, s.name AS store_name')
             ->join('fitness_member m', 'p.member_id = m.id', 'LEFT')
+            ->join('fitness_store s', 'p.store_id = s.id', 'LEFT')
             ->where('p.coach_id', $id);
         $total = (int) (clone $query)->count();
         $list  = $query->order('p.id', 'desc')->page($page, $limit)->select()->toArray();
@@ -403,6 +405,41 @@ class FitnessCoachController extends BaseController
 
         $this->log('fitness.coach', 'restore', '教练复职 #' . $id . '：' . $coach['name']);
         return $this->success(null, '恢复成功');
+    }
+
+    /** 绩效记录导出（CSV，Excel 可直接打开） */
+    public function performanceExport($id = 0)
+    {
+        $this->checkPermission('fitness.coach.performance');
+
+        $id = (int) ($id ?: $this->request->param('id'));
+        $rows = Db::name('fitness_performance')->alias('p')
+            ->field('p.*, m.name AS member_name, s.name AS store_name')
+            ->join('fitness_member m', 'p.member_id = m.id', 'LEFT')
+            ->join('fitness_store s', 'p.store_id = s.id', 'LEFT')
+            ->where('p.coach_id', $id)
+            ->order('p.id', 'desc')
+            ->select()->toArray();
+
+        $data = [];
+        foreach ($rows as $row) {
+            $data[] = [
+                $row['id'],
+                $row['member_name'] ?? '',
+                $row['store_name'] ?? '',
+                $row['perf_date'] ?? '',
+                $row['amount'] ?? 0,
+                $row['lessons'] ?? 0,
+                ((int) ($row['reverse_of'] ?? 0) > 0 || (float) ($row['amount'] ?? 0) < 0) ? '已冲销' : '有效',
+                $row['create_time'] ?? '',
+            ];
+        }
+
+        return $this->success(FitnessExportService::payload(
+            '绩效记录_' . $id . '_' . date('Ymd_His') . '.csv',
+            ['记录ID', '会员', '门店', '绩效日期', '金额(元)', '课时(次)', '状态', '录入时间'],
+            $data
+        ));
     }
 
     /** 清洗证书照片 URL 列表 */

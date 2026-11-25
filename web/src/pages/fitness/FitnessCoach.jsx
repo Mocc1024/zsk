@@ -3,11 +3,12 @@ import {
   Button, Card, DatePicker, Form, Input, InputNumber, Modal, Popconfirm, Select,
   Space, Table, Tag, Typography, Upload, message, Drawer, List, Transfer, Image,
 } from 'antd';
-import { EditOutlined, PlusOutlined, SearchOutlined, InboxOutlined, UndoOutlined } from '@ant-design/icons';
+import { EditOutlined, PlusOutlined, SearchOutlined, InboxOutlined, UndoOutlined, ExportOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { fitnessCoachApi, fitnessStoreApi, uploadApi } from '../../api';
 import { useAuth } from '../../store/AuthContext';
 import { CoverUpload } from '../../components/UploadFile';
+import { downloadExport } from '../../utils/export';
 
 const fmt = 'YYYY-MM-DD HH:mm:ss';
 
@@ -221,6 +222,13 @@ export default function FitnessCoach() {
     fetchPerfList(perfCoach.id);
   };
 
+  const handleExportPerf = async () => {
+    if (!perfCoach) return;
+    const res = await fitnessCoachApi.performanceExport(perfCoach.id);
+    downloadExport(res, '绩效记录.csv');
+    message.success(`已导出 ${res.data?.count ?? 0} 条记录`);
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -370,7 +378,10 @@ export default function FitnessCoach() {
       </Modal>
 
       {/* 绩效记录抽屉 */}
-      <Drawer title={`绩效记录 - ${perfCoach?.name || ''}`} open={perfDrawerOpen} onClose={() => setPerfDrawerOpen(false)} width={640}>
+      <Drawer title={`绩效记录 - ${perfCoach?.name || ''}`} open={perfDrawerOpen} onClose={() => setPerfDrawerOpen(false)} width={720}
+        extra={hasPermission('fitness.coach.performance') && (
+          <Button size="small" icon={<ExportOutlined />} onClick={handleExportPerf}>导出Excel</Button>
+        )}>
         <List
           dataSource={perfList}
           locale={{ emptyText: '暂无绩效记录' }}
@@ -384,7 +395,7 @@ export default function FitnessCoach() {
             )]}>
               <List.Item.Meta
                 title={<span>{item.member_name} · ¥{Number(item.amount).toFixed(2)} · {item.lessons} 次</span>}
-                description={`日期：${item.perf_date}　录入：${item.create_time}${item.reverse_of ? `　冲销记录 #${item.id}` : ''}`}
+                description={`门店：${item.store_name || '未知门店'}　日期：${item.perf_date}　录入：${item.create_time}${item.reverse_of ? `　冲销记录 #${item.id}` : ''}`}
               />
             </List.Item>
           )}

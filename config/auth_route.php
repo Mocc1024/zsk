@@ -151,6 +151,7 @@ return [
     ['PUT', 'api/fitness/coach/:id/students', 'fitness.coach.bind-students'],
     ['POST', 'api/fitness/coach/:id/performance', 'fitness.coach.performance'],
     ['GET', 'api/fitness/coach/:id/performance', 'fitness.coach.performance'],
+    ['GET', 'api/fitness/coach/:id/performance/export', 'fitness.coach.performance'],
     ['GET', 'api/fitness/coach/:id/bound-students', 'fitness.coach.performance'],
     ['POST', 'api/fitness/coach/:id/resign', 'fitness.coach.resign'],
     ['POST', 'api/fitness/coach/:id/restore', 'fitness.coach.resign'],
@@ -164,8 +165,10 @@ return [
     ['POST', 'api/fitness/member/:id/restore', 'fitness.member.delete'],
     ['POST', 'api/fitness/member/:id/consume', 'fitness.member.consume'],
     ['GET', 'api/fitness/member/:id/consume', 'fitness.member.consume'],
+    ['GET', 'api/fitness/member/:id/consume/export', 'fitness.member.consume'],
     ['DELETE', 'api/fitness/member/consume/:id', 'fitness.member.consume'],
     ['GET', 'api/fitness/member/:id/card', 'fitness.member.card'],
+    ['GET', 'api/fitness/member/:id/card/export', 'fitness.member.card'],
     ['POST', 'api/fitness/member/:id/card', 'fitness.member.card'],
     ['POST', 'api/fitness/member/card/reverse', 'fitness.member.card'],
 

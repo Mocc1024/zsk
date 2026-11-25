@@ -6,19 +6,20 @@ import { useAuth } from '../store/AuthContext';
 
 const { RangePicker } = DatePicker;
 
-const MODULE_OPTIONS = [
-  { label: '认证', value: 'auth' },
-  { label: '内容', value: 'content' },
-  { label: '分类', value: 'category' },
-  { label: '管理员', value: 'admin' },
-  { label: '系统', value: 'system' },
-];
+const MODULE_COLORS = {
+  auth: 'blue', admin: 'blue', group: 'blue', permission: 'blue', system: 'blue',
+  content: 'green', category: 'green', attachment: 'green', tag: 'green', comment: 'green',
+  user: 'gold', level: 'gold', points: 'gold', report: 'gold', open: 'gold',
+};
+
+const moduleColor = (module) => (typeof module === 'string' && module.startsWith('fitness.') ? 'purple' : MODULE_COLORS[module]);
 
 export default function LogList() {
   const { hasPermission } = useAuth();
   const [form] = Form.useForm();
   const [list, setList] = useState([]);
   const [total, setTotal] = useState(0);
+  const [moduleOptions, setModuleOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState({ page: 1, limit: 10 });
 
@@ -28,6 +29,8 @@ export default function LogList() {
       const res = await logApi.list(query);
       setList(res.data.list || []);
       setTotal(res.data.total || 0);
+      const modules = res.data.modules || {};
+      setModuleOptions(Object.entries(modules).map(([value, label]) => ({ label, value })));
     } finally {
       setLoading(false);
     }
@@ -81,7 +84,7 @@ export default function LogList() {
             <Input allowClear prefix={<SearchOutlined />} placeholder="操作人 / 描述" style={{ width: 220 }} />
           </Form.Item>
           <Form.Item name="module">
-            <Select allowClear placeholder="全部模块" style={{ width: 140 }} options={MODULE_OPTIONS} />
+            <Select allowClear placeholder="全部模块" style={{ width: 170 }} options={moduleOptions} />
           </Form.Item>
           <Form.Item name="range">
             <RangePicker placeholder={['开始日期', '结束日期']} />
@@ -123,8 +126,8 @@ export default function LogList() {
             {
               title: '模块',
               dataIndex: 'module_text',
-              width: 90,
-              render: (v) => <Tag>{v}</Tag>,
+              width: 140,
+              render: (v, record) => <Tag color={moduleColor(record.module)}>{v}</Tag>,
             },
             { title: '动作', dataIndex: 'action', width: 120 },
             { title: '描述', dataIndex: 'description', ellipsis: true },
