@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bookmark, CalendarCheck, ShieldAlert } from 'lucide-react';
+import { Bookmark, CalendarCheck, Camera, X } from 'lucide-react';
 import { pointApi, userApi } from '../api';
 import { useUserAuth } from '../store/UserAuthContext';
+import { pointSceneLabel } from '../utils/points';
 
 /**
  * 个人中心
@@ -13,6 +14,9 @@ export default function Profile() {
   const { user, logout, setUser } = useUserAuth();
 
   const [nickname, setNickname] = useState(user?.nickname || '');
+  const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [mobile, setMobile] = useState(user?.mobile || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [gender, setGender] = useState(String(user?.gender ?? 0));
   const [birthday, setBirthday] = useState(user?.birthday || '');
@@ -21,12 +25,27 @@ export default function Profile() {
   const [newPassword, setNewPassword] = useState('');
 
   const [saving, setSaving] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [securityError, setSecurityError] = useState('');
+  const [securityMessage, setSecurityMessage] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   const [signin, setSignin] = useState({ signed: false, days: 0 });
   const [levels, setLevels] = useState([]);
   const [pointLog, setPointLog] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+    setNickname(user.nickname || '');
+    setAvatar(user.avatar || '');
+    setEmail(user.email || '');
+    setMobile(user.mobile || '');
+    setBio(user.bio || '');
+    setGender(String(user.gender ?? 0));
+    setBirthday(user.birthday || '');
+  }, [user]);
 
   useEffect(() => {
     pointApi.signinStatus().then((res) => setSignin(res.data)).catch(() => {});
@@ -61,8 +80,8 @@ export default function Profile() {
     setMessage('');
     setSaving(true);
     try {
-      await userApi.updateProfile({ nickname, bio, gender: Number(gender), birthday });
-      setUser({ ...user, nickname, bio, gender: Number(gender), birthday });
+      await userApi.updateProfile({ nickname, avatar, email, mobile, bio, gender: Number(gender), birthday });
+      setUser({ ...user, nickname, avatar, email, mobile, bio, gender: Number(gender), birthday });
       setMessage('资料已更新');
     } catch (err) {
       setError(err.message || '保存失败');
@@ -71,32 +90,45 @@ export default function Profile() {
     }
   };
 
-  const changePassword = async (e) => {
-    e.preventDefault();
+  const changeAvatar = async (e) => {
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file) return;
     setError('');
     setMessage('');
     setSaving(true);
     try {
-      await userApi.password({ old_password: oldPassword, new_password: newPassword });
-      await logout();
-      navigate('/login', { replace: true });
+      const res = await userApi.uploadAvatar(file);
+      const url = res.data?.url || '';
+      setAvatar(url);
+      setUser({ ...user, avatar: url });
+      setMessage('头像已更新');
     } catch (err) {
-      setError(err.message || '修改失败');
+      setError(err.message || '头像上传失败');
     } finally {
       setSaving(false);
+      input.value = '';
     }
   };
 
-  const deactivate = async () => {
-    if (!window.confirm('注销后 30 天内重新登录可恢复，超期将彻底删除。确认注销？')) {
-      return;
-    }
+  const changePassword = async (e) => {
+    e.preventDefault();
+    setSecurityError('');
+    setSecurityMessage('');
+    setSaving(true);
     try {
-      await userApi.deactivate();
-      await logout();
-      navigate('/', { replace: true });
+      await userApi.password({ old_password: oldPassword, new_password: newPassword });
+      setPasswordOpen(false);
+      setSecurityMessage('密码修改成功，请使用新密码重新登录');
+      window.setTimeout(async () => {
+        await logout();
+        navigate('/login', { replace: true });
+      }, 1800);
     } catch (err) {
-      setError(err.message || '注销失败');
+      setPasswordOpen(false);
+      setSecurityError(err.message || '修改失败');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -104,9 +136,21 @@ export default function Profile() {
     <>
       <div className="card">
         <div className="profile-hero">
-          <div className="profile-avatar">
-            {user?.avatar ? (
-              <img src={user.avatar} alt={user?.nickname || user?.username} />
+          <div
+            className={`profile-avatar${avatar ? ' clickable' : ''}`}
+            title={avatar ? '点击查看大图' : undefined}
+            role={avatar ? 'button' : undefined}
+            tabIndex={avatar ? 0 : -1}
+            onClick={() => avatar && setAvatarPreview(true)}
+            onKeyDown={(e) => {
+              if (avatar && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                setAvatarPreview(true);
+              }
+            }}
+          >
+            {avatar ? (
+              <img src={avatar} alt={user?.nickname || user?.username} />
             ) : (
               String(user?.nickname || user?.username || 'U').slice(0, 1).toUpperCase()
             )}
@@ -164,10 +208,15 @@ export default function Profile() {
 
         {pointLog.length ? (
           <div className="point-log">
-            <h3>最近积分变动</h3>
+            <h3 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>最近积分变动</span>
+              <Link to="/points" style={{ color: 'var(--brand)', fontSize: 13, textDecoration: 'none' }}>
+                查看全部
+              </Link>
+            </h3>
             {pointLog.map((row) => (
               <div key={row.id} className="point-log-row">
-                <span className="scene">{row.scene}</span>
+                <span className="scene">{pointSceneLabel(row.scene)}</span>
                 <span className={Number(row.type) === 1 ? 'gain' : 'cost'}>
                   {Number(row.type) === 1 ? '+' : '-'}
                   {row.points}
@@ -188,8 +237,12 @@ export default function Profile() {
               <input value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={20} />
             </label>
             <label className="auth-field">
-              <span>简介</span>
-              <input value={bio} onChange={(e) => setBio(e.target.value)} maxLength={255} />
+              <span>邮箱</span>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={100} />
+            </label>
+            <label className="auth-field">
+              <span>手机号</span>
+              <input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} maxLength={11} />
             </label>
             <label className="auth-field">
               <span>性别</span>
@@ -203,6 +256,18 @@ export default function Profile() {
               <span>生日</span>
               <input type="date" value={birthday || ''} onChange={(e) => setBirthday(e.target.value)} />
             </label>
+            <div className="auth-field">
+              <span>头像</span>
+              <label className="avatar-upload">
+                <Camera size={16} />
+                <span>{saving ? '上传中…' : '选择图片'}</span>
+                <input type="file" accept="image/*" onChange={changeAvatar} disabled={saving} />
+              </label>
+            </div>
+            <label className="auth-field field-wide">
+              <span>简介</span>
+              <textarea rows={3} value={bio} onChange={(e) => setBio(e.target.value)} maxLength={255} placeholder="介绍一下自己" />
+            </label>
           </div>
 
           {error ? <p className="auth-error">{error}</p> : null}
@@ -215,47 +280,78 @@ export default function Profile() {
       </div>
 
       <div className="card">
-        <h2 className="page-title">修改密码</h2>
-        <form onSubmit={changePassword}>
-          <div className="form-grid">
-            <label className="auth-field">
-              <span>原密码</span>
-              <input
-                type="password"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-              />
-            </label>
-            <label className="auth-field">
-              <span>新密码</span>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="至少 8 位，含字母和数字"
-              />
-            </label>
-          </div>
-          <button className="auth-submit" type="submit" disabled={saving} style={{ maxWidth: 220 }}>
-            修改并重新登录
+        <h2 className="page-title">账号安全</h2>
+        <p className="placeholder">修改密码会在弹窗中确认，避免误操作。</p>
+        {securityError ? <p className="auth-error">{securityError}</p> : null}
+        {securityMessage ? <p className="auth-success">{securityMessage}</p> : null}
+        <div className="account-actions">
+          <button
+            className="auth-submit"
+            type="button"
+            onClick={() => {
+              setOldPassword('');
+              setNewPassword('');
+              setSecurityError('');
+              setSecurityMessage('');
+              setPasswordOpen(true);
+            }}
+          >
+            修改密码
           </button>
-        </form>
+        </div>
       </div>
 
-      <div className="card danger-zone">
-        <h2 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ShieldAlert size={20} /> 注销账号
-        </h2>
-        <p className="placeholder">注销后账号进入 30 天冷却期，期间重新登录可恢复；超期后彻底删除。</p>
-        <button
-          className="auth-submit danger"
-          type="button"
-          onClick={deactivate}
-          style={{ maxWidth: 200 }}
+      {passwordOpen ? (
+        <div className="modal-overlay" onClick={() => setPasswordOpen(false)}>
+          <div className="modal-card" role="dialog" aria-modal="true" aria-label="修改密码" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>修改密码</h3>
+              <button type="button" className="modal-close" aria-label="关闭" onClick={() => setPasswordOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={changePassword}>
+              <label className="auth-field">
+                <span>原密码</span>
+                <input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} />
+              </label>
+              <label className="auth-field">
+                <span>新密码</span>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="至少 8 位，含字母和数字"
+                />
+              </label>
+              <div className="modal-actions">
+                <button type="button" className="auth-submit ghost" onClick={() => setPasswordOpen(false)}>取消</button>
+                <button className="auth-submit wide" type="submit" disabled={saving}>修改并重新登录</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {avatarPreview && avatar ? (
+        <div
+          className="avatar-preview"
+          role="dialog"
+          aria-modal="true"
+          aria-label="头像大图"
+          onClick={() => setAvatarPreview(false)}
         >
-          注销账号
-        </button>
-      </div>
+          <img src={avatar} alt="头像大图" onClick={(e) => e.stopPropagation()} />
+          <button
+            type="button"
+            className="avatar-preview-close"
+            aria-label="关闭"
+            onClick={() => setAvatarPreview(false)}
+          >
+            <X size={22} />
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }

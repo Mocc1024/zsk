@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bookmark,
   ChevronDown,
+  Coins,
   Construction,
   LogOut,
   Menu,
@@ -160,6 +161,9 @@ export default function BasicLayout() {
                     <div className="user-dropdown">
                       <Link to="/profile">
                         <UserIcon size={15} /> 个人中心
+                      </Link>
+                      <Link to="/points">
+                        <Coins size={15} /> 积分明细
                       </Link>
                       <Link to="/favorites">
                         <Bookmark size={15} /> 我的收藏

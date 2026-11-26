@@ -33,16 +33,16 @@ INSERT INTO `zsk_auth_rule` (`id`, `pid`, `type`, `title`, `name`, `path`, `icon
 ,(632, 603, 2, '编辑教练',       'fitness.coach.update',         '', '',  8, 1, NOW(), NOW())
 ,(633, 603, 2, '绑定门店',       'fitness.coach.bind-store',     '', '',  7, 1, NOW(), NOW())
 ,(634, 603, 2, '绑定学员',       'fitness.coach.bind-students',  '', '',  6, 1, NOW(), NOW())
-,(635, 603, 2, '绩效管理',       'fitness.coach.performance',    '', '',  5, 1, NOW(), NOW())
+,(635, 603, 2, '绩效 / 绩效记录', 'fitness.coach.performance',    '', '',  5, 1, NOW(), NOW())
 ,(636, 603, 2, '教练离职',       'fitness.coach.resign',         '', '',  4, 1, NOW(), NOW())
 
 -- 会员管理权限点
 ,(640, 604, 2, '查看会员',       'fitness.member.list',          '', '', 10, 1, NOW(), NOW())
 ,(641, 604, 2, '新增会员',       'fitness.member.create',        '', '',  9, 1, NOW(), NOW())
 ,(642, 604, 2, '编辑会员',       'fitness.member.update',        '', '',  8, 1, NOW(), NOW())
-,(643, 604, 2, '消课',           'fitness.member.consume',       '', '',  7, 1, NOW(), NOW())
-,(644, 604, 2, '会员卡管理',     'fitness.member.card',          '', '',  6, 1, NOW(), NOW())
-,(645, 604, 2, '删除会员',       'fitness.member.delete',        '', '',  5, 1, NOW(), NOW())
+,(643, 604, 2, '消课 / 消课记录', 'fitness.member.consume',       '', '',  7, 1, NOW(), NOW())
+,(644, 604, 2, '会员卡 / 办卡记录', 'fitness.member.card',        '', '',  6, 1, NOW(), NOW())
+,(645, 604, 2, '禁用会员',       'fitness.member.delete',        '', '',  5, 1, NOW(), NOW())
 
 -- 企业管理权限点
 ,(650, 605, 2, '查看企业',       'fitness.enterprise.list',          '', '', 10, 1, NOW(), NOW())

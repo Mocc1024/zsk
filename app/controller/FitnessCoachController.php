@@ -44,14 +44,36 @@ class FitnessCoachController extends BaseController
         $list  = $query->order('c.id', 'desc')->page($page, $limit)->select()->toArray();
 
         $coachIds = array_column($list, 'id');
-        $studentCounts = [];
+        $lessonMap  = [];
+        $consumeMap = [];
         if ($coachIds) {
-            $studentCounts = Db::name('fitness_member')
+            $studentRows = Db::name('fitness_member')
                 ->whereIn('coach_id', $coachIds)->whereNull('delete_time')
-                ->group('coach_id')->column('COUNT(*)', 'coach_id');
+                ->field('coach_id, COUNT(*) AS student_count, SUM(lesson_balance) AS balance')
+                ->group('coach_id')
+                ->select()->toArray();
+            foreach ($studentRows as $row) {
+                $lessonMap[(int) $row['coach_id']] = [
+                    'student_count' => (int) $row['student_count'],
+                    'balance'       => (int) $row['balance'],
+                ];
+            }
+
+            $consumeRows = Db::name('fitness_lesson_consume')->alias('c')
+                ->join('fitness_member m', 'c.member_id = m.id')
+                ->whereIn('m.coach_id', $coachIds)->whereNull('m.delete_time')
+                ->field('m.coach_id, SUM(c.lessons) AS lessons_total')
+                ->group('m.coach_id')
+                ->select()->toArray();
+            foreach ($consumeRows as $row) {
+                $consumeMap[(int) $row['coach_id']] = (int) $row['lessons_total'];
+            }
         }
         foreach ($list as &$item) {
-            $item['student_count']   = (int) ($studentCounts[$item['id']] ?? 0);
+            $cid = (int) $item['id'];
+            $item['student_count']   = $lessonMap[$cid]['student_count'] ?? 0;
+            $item['lesson_pending']  = $lessonMap[$cid]['balance'] ?? 0;
+            $item['lesson_done']     = $consumeMap[$cid] ?? 0;
             $item['certificates']    = json_decode((string) $item['certificates'], true) ?: [];
             $item['status_text']     = (int) $item['status'] === FitnessService::COACH_ACTIVE ? '在职' : '离职';
         }

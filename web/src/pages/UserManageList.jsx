@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Card,
+  DatePicker,
   Empty,
   Form,
   Input,
@@ -18,6 +19,8 @@ import {
 } from 'antd';
 import { levelApi, userManageApi } from '../api';
 import { useAuth } from '../store/AuthContext';
+import { CoverUpload } from '../components/UploadFile';
+import dayjs from 'dayjs';
 
 /**
  * 用户管理 + 等级标识
@@ -58,6 +61,9 @@ function UserTable({ hasPermission }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [createSaving, setCreateSaving] = useState(false);
   const [createForm] = Form.useForm();
+  const [editing, setEditing] = useState(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editForm] = Form.useForm();
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -132,6 +138,38 @@ function UserTable({ hasPermission }) {
     }
   };
 
+  const openEdit = (row) => {
+    setEditing(row);
+    editForm.setFieldsValue({
+      nickname: row.nickname || '',
+      avatar: row.avatar || '',
+      gender: Number(row.gender ?? 0),
+      birthday: row.birthday ? dayjs(row.birthday) : null,
+      mobile: row.mobile || '',
+      email: row.email || '',
+      bio: row.bio || '',
+    });
+  };
+
+  const submitEdit = async () => {
+    const values = await editForm.validateFields();
+    setEditSaving(true);
+    try {
+      const payload = {
+        ...values,
+        birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : '',
+      };
+      await userManageApi.update(editing.id, payload);
+      message.success('已保存');
+      setEditing(null);
+      loadList();
+    } catch (e) {
+      // 错误提示已由拦截器统一处理
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const openAdjust = (row) => {
     setAdjust(row);
     adjustForm.setFieldsValue({ points: 0, exp: 0 });
@@ -176,10 +214,13 @@ function UserTable({ hasPermission }) {
     {
       title: '操作',
       key: 'action',
-      width: 300,
+      width: 360,
       fixed: 'right',
       render: (_, row) => (
         <Space size={4}>
+          {hasPermission('user.update') && (
+            <Button type="link" size="small" onClick={() => openEdit(row)}>编辑</Button>
+          )}
           {hasPermission('user.status') && (
             <Button type="link" size="small" onClick={() => toggleStatus(row)}>
               {Number(row.status) === 1 ? '禁用' : '启用'}
@@ -325,6 +366,48 @@ function UserTable({ hasPermission }) {
           </Form.Item>
           <Form.Item name="status" label="状态">
             <Select options={[{ value: 1, label: '正常' }, { value: 0, label: '禁用' }]} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={`编辑用户 - ${editing?.username || ''}`}
+        open={!!editing}
+        onCancel={() => setEditing(null)}
+        onOk={submitEdit}
+        confirmLoading={editSaving}
+        okText="保存"
+        cancelText="取消"
+        destroyOnClose
+      >
+        <Form form={editForm} layout="vertical" preserve={false}>
+          <Form.Item label="用户名">
+            <Input value={editing?.username || ''} disabled />
+          </Form.Item>
+          <Form.Item name="nickname" label="昵称" rules={[{ required: true, message: '请输入昵称' }]}>
+            <Input maxLength={30} />
+          </Form.Item>
+          <Form.Item name="avatar" label="头像">
+            <CoverUpload folder="avatar" />
+          </Form.Item>
+          <Form.Item name="gender" label="性别">
+            <Select options={[
+              { value: 0, label: '未知' },
+              { value: 1, label: '男' },
+              { value: 2, label: '女' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="birthday" label="生日">
+            <DatePicker style={{ width: '100%' }} placeholder="选择生日" />
+          </Form.Item>
+          <Form.Item name="mobile" label="手机号">
+            <Input maxLength={20} />
+          </Form.Item>
+          <Form.Item name="email" label="邮箱" rules={[{ type: 'email', message: '邮箱格式不正确' }]}>
+            <Input maxLength={100} />
+          </Form.Item>
+          <Form.Item name="bio" label="个人简介">
+            <Input.TextArea rows={3} maxLength={255} showCount />
           </Form.Item>
         </Form>
       </Modal>

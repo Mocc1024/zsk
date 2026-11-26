@@ -273,7 +273,7 @@ export default function FitnessCoach() {
 
       <Card bordered={false}>
         <Table
-          rowKey="id" loading={loading} dataSource={list} scroll={{ x: 1150 }}
+          rowKey="id" loading={loading} dataSource={list} scroll={{ x: 1370 }}
           pagination={{
             current: query.page, pageSize: query.limit, total, showTotal: (t) => `共 ${t} 条`,
             onChange: (page, limit) => setQuery((p) => ({ ...p, page, limit })),
@@ -285,6 +285,8 @@ export default function FitnessCoach() {
             { title: '出生日期', dataIndex: 'birth_date', width: 120 },
             { title: '门店', dataIndex: 'store_name', width: 130 },
             { title: '学员数', dataIndex: 'student_count', width: 90, align: 'right' },
+            { title: '剩余课时', dataIndex: 'lesson_pending', width: 110, align: 'right', render: (v) => `${v || 0} 次` },
+            { title: '已上课时', dataIndex: 'lesson_done', width: 110, align: 'right', render: (v) => `${v || 0} 次` },
             {
               title: '证书', dataIndex: 'certificates', width: 90,
               render: (urls) => <Image.PreviewGroup>{(urls || []).slice(0, 3).map((u, i) => <Image key={i} src={u} width={36} height={36} style={{ objectFit: 'cover', borderRadius: 4, marginRight: 4 }} />)}</Image.PreviewGroup>,

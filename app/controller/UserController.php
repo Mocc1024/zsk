@@ -10,6 +10,7 @@ use app\service\Jwt;
 use app\service\TokenBlacklist;
 use app\service\UploadService;
 use think\exception\ValidateException;
+use think\facade\Db;
 use think\file\UploadedFile;
 
 /**
@@ -65,6 +66,27 @@ class UserController extends BaseController
         }
         if (isset($data['avatar'])) {
             $update['avatar'] = trim((string) $data['avatar']);
+        }
+        if (isset($data['email'])) {
+            $email = trim((string) $data['email']);
+            if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return $this->fail('邮箱格式不正确');
+            }
+            $update['email'] = $email;
+        }
+        if (isset($data['mobile'])) {
+            $mobile = trim((string) $data['mobile']);
+            if ($mobile !== '' && !preg_match('/^1\d{10}$/', $mobile)) {
+                return $this->fail('请输入 11 位手机号');
+            }
+            if ($mobile !== '') {
+                $exists = Db::name('user')->where('mobile', $mobile)
+                    ->where('id', '<>', Context::userId())->find();
+                if ($exists) {
+                    return $this->fail('该手机号已被使用');
+                }
+            }
+            $update['mobile'] = $mobile === '' ? null : $mobile;
         }
         if (isset($data['gender'])) {
             $update['gender'] = in_array((int) $data['gender'], [0, 1, 2], true) ? (int) $data['gender'] : 0;

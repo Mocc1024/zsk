@@ -145,10 +145,20 @@ class UserManageController extends BaseController
         $data = $this->params();
 
         $update = ['update_time' => date('Y-m-d H:i:s')];
-        foreach (['nickname', 'email', 'mobile', 'bio'] as $field) {
+        foreach (['nickname', 'avatar', 'email', 'mobile', 'bio'] as $field) {
             if (isset($data[$field])) {
                 $update[$field] = trim((string) $data[$field]);
             }
+        }
+        if (isset($data['gender'])) {
+            $update['gender'] = in_array((int) $data['gender'], [0, 1, 2], true) ? (int) $data['gender'] : 0;
+        }
+        if (isset($data['birthday'])) {
+            $birthday = trim((string) $data['birthday']);
+            if ($birthday !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthday)) {
+                return $this->fail('生日格式不正确');
+            }
+            $update['birthday'] = $birthday === '' ? null : $birthday;
         }
 
         Db::name('user')->where('id', $id)->update($update);

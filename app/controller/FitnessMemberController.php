@@ -60,7 +60,7 @@ class FitnessMemberController extends BaseController
         $id  = (int) ($id ?: $this->request->param('id'));
         $row = Db::name('fitness_member')->where('id', $id)->whereNull('delete_time')->find();
         if (!$row) {
-            return $this->fail('会员不存在或已删除', 404);
+            return $this->fail('会员不存在或已禁用', 404);
         }
         return $this->success($row);
     }
@@ -127,7 +127,7 @@ class FitnessMemberController extends BaseController
         $data = $this->params();
         $row  = Db::name('fitness_member')->where('id', $id)->whereNull('delete_time')->find();
         if (!$row) {
-            return $this->fail('会员不存在或已删除', 404);
+            return $this->fail('会员不存在或已禁用', 404);
         }
 
         if (array_key_exists('mobile', $data)) {
@@ -172,7 +172,7 @@ class FitnessMemberController extends BaseController
         $data = $this->params();
         $member = Db::name('fitness_member')->where('id', $id)->whereNull('delete_time')->find();
         if (!$member) {
-            return $this->fail('会员不存在或已删除', 404);
+            return $this->fail('会员不存在或已禁用', 404);
         }
 
         $res = FitnessService::createConsume(
@@ -244,7 +244,7 @@ class FitnessMemberController extends BaseController
         $data = $this->params();
         $member = Db::name('fitness_member')->where('id', $id)->whereNull('delete_time')->find();
         if (!$member) {
-            return $this->fail('会员不存在或已删除', 404);
+            return $this->fail('会员不存在或已禁用', 404);
         }
 
         $res = FitnessService::createCard([
@@ -275,7 +275,7 @@ class FitnessMemberController extends BaseController
         return $this->success(null, $res['msg']);
     }
 
-    /** 删除会员（软删 + 禁用前台账号） */
+    /** 禁用会员（软删 + 禁用前台账号） */
     public function delete($id = 0)
     {
         $this->checkPermission('fitness.member.delete');
@@ -283,7 +283,7 @@ class FitnessMemberController extends BaseController
         $id  = (int) ($id ?: $this->request->param('id'));
         $row = Db::name('fitness_member')->where('id', $id)->whereNull('delete_time')->find();
         if (!$row) {
-            return $this->fail('会员不存在或已删除', 404);
+            return $this->fail('会员不存在或已禁用', 404);
         }
 
         $reasons = [];
@@ -294,7 +294,7 @@ class FitnessMemberController extends BaseController
             $reasons[] = '还有 ' . (int) $row['lesson_balance'] . ' 次课时未上完';
         }
         if ($reasons) {
-            return $this->fail('该会员' . implode('，', $reasons) . '，请先解绑/消课后再删除');
+            return $this->fail('该会员' . implode('，', $reasons) . '，请先解绑/消课后再禁用');
         }
 
         Db::startTrans();
@@ -307,8 +307,8 @@ class FitnessMemberController extends BaseController
             return $this->fail('删除失败：' . $e->getMessage());
         }
 
-        $this->log('fitness.member', 'delete', '删除会员 #' . $id . '：' . $row['name']);
-        return $this->success(null, '删除成功');
+        $this->log('fitness.member', 'delete', '禁用会员 #' . $id . '：' . $row['name']);
+        return $this->success(null, '禁用成功');
     }
 
     /** 恢复已删除（禁用）的会员 */
@@ -335,8 +335,8 @@ class FitnessMemberController extends BaseController
             return $this->fail('恢复失败：' . $e->getMessage());
         }
 
-        $this->log('fitness.member', 'restore', '恢复会员 #' . $id . '：' . $row['name']);
-        return $this->success(null, '恢复成功');
+        $this->log('fitness.member', 'restore', '启用会员 #' . $id . '：' . $row['name']);
+        return $this->success(null, '启用成功');
     }
 
     /** 消课记录导出（CSV） */

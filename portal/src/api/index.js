@@ -56,6 +56,11 @@ export const userApi = {
   logout: (data) => request.post('/front/auth/logout', data),
   profile: () => request.get('/front/user/profile'),
   updateProfile: (data) => request.put('/front/user/profile', data),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return request.post('/front/user/avatar', formData);
+  },
   password: (data) => request.post('/front/user/password', data),
   deactivate: () => request.post('/front/user/deactivate'),
 };

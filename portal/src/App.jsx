@@ -6,6 +6,7 @@ import ContentDetail from './pages/ContentDetail';
 import SearchPage from './pages/SearchPage';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
+import Points from './pages/Points';
 import Favorites from './pages/Favorites';
 import NotFound from './pages/NotFound';
 import { UserAuthProvider, useUserAuth } from './store/UserAuthContext';
@@ -44,6 +45,14 @@ function AppRoutes() {
           element={
             <RequireUser>
               <Profile />
+            </RequireUser>
+          }
+        />
+        <Route
+          path="/points"
+          element={
+            <RequireUser>
+              <Points />
             </RequireUser>
           }
         />

@@ -94,13 +94,13 @@ export default function FitnessMember() {
 
   const handleDelete = async (id) => {
     await fitnessMemberApi.remove(id);
-    message.success('删除成功');
+    message.success('禁用成功');
     fetchList();
   };
 
   const handleRestore = async (id) => {
     await fitnessMemberApi.restore(id);
-    message.success('恢复成功');
+    message.success('启用成功');
     fetchList();
   };
 
@@ -237,9 +237,13 @@ export default function FitnessMember() {
             },
             {
               title: '最晚卡到期', dataIndex: 'max_card_end_date', width: 120,
-              render: (v) => v
-                ? <span style={{ color: v < new Date().toISOString().slice(0, 10) ? '#cf1322' : undefined }}>{v}</span>
-                : <span style={{ color: '#999' }}>—</span>,
+              render: (v) => {
+                if (!v) return <span style={{ color: '#999' }}>—</span>;
+                const end = String(v).slice(0, 10);
+                const now = new Date();
+                const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                return <span style={{ color: end < today ? '#cf1322' : undefined }}>{v}</span>;
+              },
             },
             {
               title: '状态', dataIndex: 'delete_time', width: 90,
@@ -250,8 +254,8 @@ export default function FitnessMember() {
               render: (_, record) => (
                 <Space size={2} wrap>
                   {record.delete_time ? (hasPermission('fitness.member.delete') && (
-                    <Popconfirm title="确认恢复该会员？" onConfirm={() => handleRestore(record.id)}>
-                      <Button type="link" size="small" icon={<UndoOutlined />}>恢复</Button>
+                    <Popconfirm title="确认启用该会员？" onConfirm={() => handleRestore(record.id)}>
+                      <Button type="link" size="small" icon={<UndoOutlined />}>启用</Button>
                     </Popconfirm>
                   )) : (
                     <>
@@ -265,8 +269,8 @@ export default function FitnessMember() {
                         <Button type="link" size="small" onClick={() => openRecords(record, 'card')}>办卡记录</Button>
                       </>}
                       {hasPermission('fitness.member.delete') && (
-                        <Popconfirm title="确认删除该会员？绑定教练或课时未上完时将被拒绝，同时停用其前台账号" onConfirm={() => handleDelete(record.id)}>
-                          <Button type="link" size="small" danger>删除</Button>
+                        <Popconfirm title="确认禁用该会员？绑定教练或课时未上完时将被拒绝，同时停用其前台账号" onConfirm={() => handleDelete(record.id)}>
+                          <Button type="link" size="small" danger>禁用</Button>
                         </Popconfirm>
                       )}
                     </>
