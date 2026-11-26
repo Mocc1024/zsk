@@ -6,7 +6,7 @@ import {
 import { EditOutlined, PlusOutlined, SearchOutlined, UndoOutlined, ExportOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
-  fitnessMemberApi, fitnessStoreApi, fitnessEnterpriseApi,
+  fitnessMemberApi, fitnessStoreApi, fitnessEnterpriseApi, fitnessCoachApi,
 } from '../../api';
 import { useAuth } from '../../store/AuthContext';
 import { CoverUpload } from '../../components/UploadFile';
@@ -28,6 +28,7 @@ export default function FitnessMember() {
   const [query, setQuery] = useState({ page: 1, limit: 10, deleted: 0 });
 
   const [stores, setStores] = useState([]);
+  const [coaches, setCoaches] = useState([]);
   const [enterprises, setEnterprises] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -52,6 +53,7 @@ export default function FitnessMember() {
   useEffect(() => { fetchList(); }, [fetchList]);
   useEffect(() => {
     fitnessStoreApi.options().then((r) => setStores(r.data || []));
+    fitnessCoachApi.options().then((r) => setCoaches(r.data || []));
     fitnessEnterpriseApi.options().then((r) => setEnterprises(r.data || []));
   }, []);
 
@@ -199,11 +201,15 @@ export default function FitnessMember() {
 
       <Card bordered={false} style={{ marginBottom: 16 }}>
         <Form form={searchForm} layout="inline" initialValues={{ deleted: 0 }}
-          onFinish={(v) => setQuery((p) => ({ ...p, page: 1, keyword: v.keyword || undefined, store_id: v.store_id, deleted: v.deleted }))} style={{ rowGap: 12 }}>
+          onFinish={(v) => setQuery((p) => ({ ...p, page: 1, keyword: v.keyword || undefined, store_id: v.store_id, coach_id: v.coach_id, deleted: v.deleted }))} style={{ rowGap: 12 }}>
           <Form.Item name="keyword"><Input allowClear prefix={<SearchOutlined />} placeholder="姓名 / 手机号" style={{ width: 220 }} /></Form.Item>
           <Form.Item name="store_id">
             <Select allowClear placeholder="全部门店" style={{ width: 170 }}
               options={stores.map((s) => ({ label: s.name, value: s.id }))} />
+          </Form.Item>
+          <Form.Item name="coach_id">
+            <Select allowClear placeholder="全部教练" style={{ width: 170 }}
+              options={coaches.map((c) => ({ label: c.name, value: c.id }))} />
           </Form.Item>
           <Form.Item name="deleted">
             <Select placeholder="状态" style={{ width: 130 }}

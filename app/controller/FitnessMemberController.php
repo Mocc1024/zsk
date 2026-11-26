@@ -24,6 +24,7 @@ class FitnessMemberController extends BaseController
         [$page, $limit] = $this->pageInfo();
         $keyword = trim((string) $this->input('keyword', ''));
         $storeId = (int) $this->input('store_id', 0);
+        $coachId = (int) $this->input('coach_id', 0);
         $deleted = (int) $this->input('deleted', 0);
 
         $query = Db::name('fitness_member')->alias('m')
@@ -41,6 +42,9 @@ class FitnessMemberController extends BaseController
         }
         if ($storeId > 0) {
             $query->where('m.store_id', $storeId);
+        }
+        if ($coachId > 0) {
+            $query->where('m.coach_id', $coachId);
         }
 
         $total = (int) (clone $query)->count();
@@ -412,6 +416,7 @@ class FitnessMemberController extends BaseController
 
         $keyword = trim((string) $this->input('keyword', ''));
         $storeId = (int) $this->input('store_id', 0);
+        $coachId = (int) $this->input('coach_id', 0);
         $deleted = (int) $this->input('deleted', 0);
 
         $query = Db::name('fitness_member')->alias('m')
@@ -429,6 +434,9 @@ class FitnessMemberController extends BaseController
         }
         if ($storeId > 0) {
             $query->where('m.store_id', $storeId);
+        }
+        if ($coachId > 0) {
+            $query->where('m.coach_id', $coachId);
         }
 
         $rows = $query->order('m.id', 'desc')->select()->toArray();
